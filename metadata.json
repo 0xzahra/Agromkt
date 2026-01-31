@@ -1,0 +1,9 @@
+{
+  "name": "Agromarket",
+  "description": "A premium, hyper-realistic bilingual marketplace for Nigerian agriculture connecting farmers and buyers.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
