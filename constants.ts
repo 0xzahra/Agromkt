@@ -1,4 +1,4 @@
-import { Translation, Product, ForumPost, UserProfile } from './types';
+import { Translation, Product, ForumPost, UserProfile, ForumGroup } from './types';
 
 export const CRYPTO_ADDRESSES = {
   ETH_BASE: "arewa.base.eth",
@@ -42,7 +42,15 @@ export const TRANSLATIONS: Translation = {
   support_help: { EN: "Help", HA: "Taimako" },
 
   mode_sell: { EN: "For Sale", HA: "Na Sayarwa" },
-  mode_buy: { EN: "Buy Requests", HA: "Bukatar Saye" }
+  mode_buy: { EN: "Buy Requests", HA: "Bukatar Saye" },
+
+  stats_earnings: { EN: "Total Earnings", HA: "Jimlar Kuɗin Shiga" },
+  stats_sold: { EN: "Items Sold", HA: "Abubuwan da aka Sayar" },
+  stats_active: { EN: "Active Listings", HA: "Tallace-tallace Masu Aiki" },
+  
+  setting_font_size: { EN: "Font Size", HA: "Girman Rubutu" },
+  footer_quick_links: { EN: "Quick Links", HA: "Hanyoyin Sauri" },
+  footer_contact: { EN: "Contact Us", HA: "Tuntube Mu" }
 };
 
 export const MOCK_USER: UserProfile = {
@@ -59,8 +67,82 @@ export const MOCK_USER: UserProfile = {
     instagram: 'instagram.com/zahra_farms'
   },
   reputation: 4.8,
-  joinedDate: 'Jan 2024'
+  joinedDate: 'Jan 2024',
+  stats: {
+    totalEarnings: 4500000,
+    itemsSold: 142,
+    activeListings: 12,
+    pendingOrders: 5
+  },
+  followers: 1250,
+  following: 45
 };
+
+export const MOCK_GROUPS: ForumGroup[] = [
+  {
+    id: 'g1',
+    name: 'Poultry Pros Nigeria',
+    description: 'The #1 community for broiler and layer farmers.',
+    image: 'https://images.unsplash.com/photo-1563721345-f09dfd2d3869?q=80&w=400&auto=format&fit=crop',
+    members: 15420,
+    isJoined: true
+  },
+  {
+    id: 'g2',
+    name: 'Kano Farmers Union',
+    description: 'Connect with local farmers in Kano state.',
+    image: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=400&auto=format&fit=crop',
+    members: 8200,
+    isJoined: false
+  },
+  {
+    id: 'g3',
+    name: 'Fish Farming 101',
+    description: 'Catfish and Tilapia farming guides and discussions.',
+    image: 'https://images.unsplash.com/photo-1516684669134-de6d7c47743b?q=80&w=400&auto=format&fit=crop',
+    members: 5300,
+    isJoined: false
+  }
+];
+
+export const MOCK_POSTS: ForumPost[] = [
+  {
+    id: '1',
+    groupId: 'g1',
+    authorId: 'u2',
+    author: 'Musa Ibrahim',
+    authorAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+    role: 'Expert',
+    title: 'Managing Heat Stress in Broilers',
+    content: 'During the dry season, it is crucial to provide electrolytes and ensure proper ventilation. I recommend feeding during cooler parts of the day. Here is a picture of my setup.',
+    image: 'https://images.unsplash.com/photo-1560493676-04071c5f467b?q=80&w=800&auto=format&fit=crop',
+    category: 'Disease Control',
+    likes: 45,
+    comments: [
+       { id: 'c1', authorId: 'u3', authorName: 'Aliyu Bello', authorAvatar: 'https://randomuser.me/api/portraits/men/11.jpg', content: 'Great advice Musa! What specific electrolyte brand do you use?', timestamp: '1h ago' },
+       { id: 'c2', authorId: 'u1', authorName: 'Zahra Usman', authorAvatar: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=200&auto=format&fit=crop', content: 'Vitalyte works best for me in Kano heat.', timestamp: '30m ago' }
+    ],
+    timestamp: '2h ago',
+    isLiked: false
+  },
+  {
+    id: '2',
+    groupId: 'g2',
+    authorId: 'u4',
+    author: 'Chidinma Okoro',
+    authorAvatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+    role: 'Farmer',
+    title: 'Current Maize prices in Kaduna?',
+    content: 'Looking to formulate my own feed. Any insights on the current price per ton in Kaduna markets? I heard it dropped recently.',
+    category: 'Market Prices',
+    likes: 10,
+    comments: [
+        { id: 'c3', authorId: 'u5', authorName: 'Emeka Kalu', authorAvatar: 'https://randomuser.me/api/portraits/men/66.jpg', content: 'It is currently ₦450,000 per ton at Dawanau market.', timestamp: '2h ago' }
+    ],
+    timestamp: '5h ago',
+    isLiked: true
+  }
+];
 
 export const MOCK_PRODUCTS: Product[] = [
   {
@@ -133,31 +215,18 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Organic free-range turkeys available for festive season. Average weight 8kg.',
     datePosted: '5 days ago'
   },
-];
-
-export const MOCK_POSTS: ForumPost[] = [
   {
-    id: '1',
-    author: 'Musa Ibrahim',
-    authorAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    role: 'Expert',
-    title: 'Managing Heat Stress in Broilers',
-    content: 'During the dry season, it is crucial to provide electrolytes and ensure proper ventilation. I recommend feeding during cooler parts of the day.',
-    category: 'Disease Control',
-    likes: 45,
-    comments: 12,
-    timestamp: '2h ago'
-  },
-  {
-    id: '2',
-    author: 'Chidinma Okoro',
-    authorAvatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-    role: 'Farmer',
-    title: 'Current Maize prices in Kaduna?',
-    content: 'Looking to formulate my own feed. Any insights on the current price per ton in Kaduna markets?',
-    category: 'Market Prices',
-    likes: 10,
-    comments: 24,
-    timestamp: '5h ago'
+    id: '6',
+    name: 'Organic Fertilizer (Manure)',
+    category: 'Feed',
+    type: 'sell',
+    price: 1500,
+    location: 'Kaduna',
+    sellerId: 's4',
+    sellerName: 'Green Earth',
+    sellerPhone: '2348000000005',
+    image: 'https://images.unsplash.com/photo-1628352081506-83c43123ed6d?q=80&w=800&auto=format&fit=crop',
+    description: 'Rich organic manure for crop farming. Sold in 50kg bags.',
+    datePosted: '1 day ago'
   }
 ];

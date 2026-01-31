@@ -5,7 +5,7 @@ export interface Product {
   id: string;
   name: string;
   category: 'Poultry' | 'Fish' | 'Feed';
-  type: 'sell' | 'buy'; // New: distinguishing buy requests from sell listings
+  type: 'sell' | 'buy';
   price: number;
   location: string;
   sellerId: string;
@@ -13,8 +13,15 @@ export interface Product {
   sellerPhone: string;
   image: string;
   description: string;
-  images?: string[]; // Gallery support
+  images?: string[];
   datePosted: string;
+}
+
+export interface UserStats {
+  totalEarnings: number;
+  itemsSold: number;
+  activeListings: number;
+  pendingOrders: number;
 }
 
 export interface UserProfile {
@@ -31,21 +38,46 @@ export interface UserProfile {
     twitter?: string;
     facebook?: string;
   };
-  reputation: number; // 0-5 stars
+  reputation: number;
   joinedDate: string;
+  stats: UserStats;
+  followers?: number;
+  following?: number;
+}
+
+export interface Comment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface ForumGroup {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  members: number;
+  isJoined?: boolean;
 }
 
 export interface ForumPost {
   id: string;
+  groupId: string;
+  authorId: string;
   author: string;
   authorAvatar?: string;
   role: 'Farmer' | 'Buyer' | 'Expert';
   title: string;
   content: string;
+  image?: string; // Media upload
   category: 'Disease Control' | 'Feed Formulation' | 'Market Prices' | 'General';
   likes: number;
-  comments: number;
+  comments: Comment[]; // Nested comments
   timestamp: string;
+  isLiked?: boolean;
 }
 
 export interface AppSettings {
@@ -54,6 +86,7 @@ export interface AppSettings {
   textToSpeech: boolean;
   cloudSync: boolean;
   twoFactor: boolean;
+  fontSize: 'small' | 'medium' | 'large';
 }
 
 export interface Translation {
