@@ -201,7 +201,7 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Urgent request for 500 bags of dry white maize. Must be clean and free from weevils. Payment on delivery.',
     datePosted: 'Just now'
   },
-   {
+  {
     id: '5',
     name: 'Full Grown Turkeys',
     category: 'Poultry',

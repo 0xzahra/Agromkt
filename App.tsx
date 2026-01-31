@@ -953,46 +953,8 @@ function App() {
            </button>
         </div>
 
-        <footer className={`glass-panel border-t ${theme === 'dark' ? 'border-white/10' : 'border-gray-200'} pt-16 pb-8 z-10 relative mt-20`}>
-          <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-              <div className="space-y-6">
-                   <div className="flex items-center gap-3">
-                        <div className="bg-green-600 p-2 rounded-lg"><LucideLeaf className="text-white" size={24} /></div>
-                        <h2 className={`text-2xl font-serif font-black ${theme === 'dark' ? 'text-white' : 'text-green-900'}`}>Agromarket</h2>
-                   </div>
-                   <p className="opacity-60 leading-relaxed">Revolutionizing Nigerian agriculture through technology, community, and trust.</p>
-              </div>
-              
-              <div>
-                  <h3 className="font-bold uppercase tracking-wider mb-6 opacity-80">{TRANSLATIONS.footer_quick_links[lang]}</h3>
-                  <ul className="space-y-4 opacity-60">
-                      <li><button onClick={() => setActiveTab('market')}>Marketplace</button></li>
-                      <li><button onClick={() => setActiveTab('forum')}>Community Forum</button></li>
-                      <li><button onClick={() => setActiveTab('ai')}>AI Assistant</button></li>
-                      <li><button onClick={() => setActiveTab('tools')}>Creative Tools</button></li>
-                  </ul>
-              </div>
-
-              <div>
-                  <h3 className="font-bold uppercase tracking-wider mb-6 opacity-80">Legal</h3>
-                  <ul className="space-y-4 opacity-60">
-                      <li>Privacy Policy</li>
-                      <li>Terms of Service</li>
-                      <li>Safety Tips</li>
-                      <li>Dispute Resolution</li>
-                  </ul>
-              </div>
-
-              <div>
-                  <h3 className="font-bold uppercase tracking-wider mb-6 opacity-80">{TRANSLATIONS.footer_contact[lang]}</h3>
-                  <ul className="space-y-4 opacity-60">
-                      <li className="flex items-center gap-2"><LucideMail size={16}/> support@agromarket.ng</li>
-                      <li className="flex items-center gap-2"><LucidePhone size={16}/> +234 800 AGRO HELP</li>
-                      <li className="flex items-center gap-2"><LucideMapPin size={16}/> Kano Innovation Hub, Nigeria</li>
-                  </ul>
-              </div>
-          </div>
-          <div className="text-center pt-8 border-t border-white/5">
+        <footer className={`glass-panel border-t ${theme === 'dark' ? 'border-white/10' : 'border-gray-200'} pt-8 pb-8 z-10 relative mt-20`}>
+          <div className="text-center">
             <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-500' : 'text-gray-600'}`}>
                 {TRANSLATIONS.copyright[lang]}
             </p>
