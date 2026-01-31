@@ -5,22 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agromarket</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
       body {
         font-family: 'Lato', sans-serif;
+        transition: background-image 0.5s ease-in-out;
       }
       h1, h2, h3, h4, h5, h6 {
         font-family: 'Playfair Display', serif;
       }
+      
+      /* Base Glass Panel */
       .glass-panel {
-        background: rgba(20, 30, 20, 0.85);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(15, 23, 15, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
       }
+      
+      /* Light Mode Glass Panel Override */
+      .light-mode .glass-panel {
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        color: #1a2e1a;
+      }
+
+      /* Nature Shadow */
       .nature-shadow {
-        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.4);
+      }
+      .light-mode .nature-shadow {
+        box-shadow: 0 15px 35px -5px rgba(0, 60, 0, 0.15);
+      }
+
+      /* Eye Comfort Overlay */
+      .eye-comfort-overlay {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(255, 166, 0, 0.15);
+        mix-blend-mode: multiply;
+        pointer-events: none;
+        z-index: 9999;
+      }
+
+      /* High Contrast Utility */
+      .high-contrast {
+        filter: contrast(140%) saturate(110%);
+      }
+      
+      /* Hide scrollbar for clean look */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
     </style>
   <script type="importmap">
