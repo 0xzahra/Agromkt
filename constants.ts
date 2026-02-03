@@ -47,6 +47,7 @@ export const TRANSLATIONS: Translation = {
   stats_earnings: { EN: "Total Earnings", HA: "Jimlar Kuɗin Shiga" },
   stats_sold: { EN: "Items Sold", HA: "Abubuwan da aka Sayar" },
   stats_active: { EN: "Active Listings", HA: "Tallace-tallace Masu Aiki" },
+  stats_pending: { EN: "Pending Orders", HA: "Oda Masu Jiranta" },
   
   setting_font_size: { EN: "Font Size", HA: "Girman Rubutu" },
   footer_quick_links: { EN: "Quick Links", HA: "Hanyoyin Sauri" },
@@ -156,6 +157,7 @@ export const MOCK_PRODUCTS: Product[] = [
     sellerName: 'Ibadan Farms Ltd',
     sellerPhone: '2348000000001',
     image: 'https://images.unsplash.com/photo-1544558509-f6230f2c4193?q=80&w=800&auto=format&fit=crop',
+    video: 'https://cdn.pixabay.com/video/2022/11/27/140733-775791410_large.mp4',
     description: 'High quality Arbor Acres broilers. Vaccinated against Newcastle and Gumboro. Ideal for 6-week maturity cycle.',
     datePosted: '2 days ago'
   },

@@ -12,6 +12,7 @@ export interface Product {
   sellerName: string;
   sellerPhone: string;
   image: string;
+  video?: string;
   description: string;
   images?: string[];
   datePosted: string;
