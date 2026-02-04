@@ -17,6 +17,10 @@ import { Language, Product, ForumPost, ChatMessage, AppSettings, UserProfile, Th
 import { askFarmingAssistant, generateMarketingImage, generateMarketingVideo } from './services/geminiService';
 import LiveExpert from './components/LiveExpert';
 
+// --- Configuration ---
+// REPLACE THIS URL WITH YOUR UPLOADED LOGO IMAGE PATH
+const LOGO_URL = "https://images.unsplash.com/photo-1599387661571-0428d0859897?q=80&w=500&auto=format&fit=crop"; 
+
 // --- Services & Helpers ---
 const speakText = (text: string) => {
   if ('speechSynthesis' in window) {
@@ -30,6 +34,48 @@ const calculateDaysLeft = (expiryDate?: string) => {
     const diff = new Date(expiryDate).getTime() - new Date().getTime();
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
     return days;
+};
+
+// --- Intro Component ---
+const IntroScreen = ({ onComplete }: { onComplete: () => void }) => {
+  const [animationStep, setAnimationStep] = useState(0);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setAnimationStep(1), 500); // Logo fade in
+    const t2 = setTimeout(() => setAnimationStep(2), 1500); // Text slide up
+    const t3 = setTimeout(() => setAnimationStep(3), 3500); // Exit start
+    const t4 = setTimeout(onComplete, 4200); // Complete
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [onComplete]);
+
+  return (
+    <div className={`fixed inset-0 z-[200] bg-[#FAFDF9] flex flex-col items-center justify-center transition-all duration-700 ${animationStep === 3 ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100'}`}>
+        <div className="relative flex flex-col items-center p-8">
+            {/* Logo Image */}
+            <div className={`transition-all duration-1000 ease-out transform ${animationStep >= 1 ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-90'}`}>
+                <div className="w-48 h-48 md:w-64 md:h-64 rounded-full bg-white shadow-2xl flex items-center justify-center p-2 mb-8 border-4 border-green-50 overflow-hidden relative">
+                    <img 
+                        src={LOGO_URL} 
+                        alt="Agromkt Logo" 
+                        className="w-full h-full object-cover rounded-full"
+                    />
+                    <div className="absolute inset-0 rounded-full border border-black/5"></div>
+                </div>
+            </div>
+
+            {/* Text */}
+            <div className="text-center overflow-hidden h-40">
+                <h2 className={`text-2xl md:text-3xl text-gray-500 font-serif font-medium mb-3 transition-all duration-1000 delay-300 transform ${animationStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`}>
+                    Welcome back to
+                </h2>
+                <h1 className={`text-6xl md:text-8xl font-serif font-black text-transparent bg-clip-text bg-gradient-to-r from-green-800 to-green-600 tracking-tighter transition-all duration-1000 delay-500 transform ${animationStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'}`}>
+                    Agromarket
+                </h1>
+            </div>
+        </div>
+    </div>
+  );
 };
 
 // --- Authentication Components ---
@@ -289,6 +335,7 @@ const Navbar = ({ lang, setLang, activeTab, setActiveTab, mobileMenuOpen, setMob
   const [showNotifications, setShowNotifications] = useState(false);
   const [showInbox, setShowInbox] = useState(false);
   const [mobileSection, setMobileSection] = useState<'inbox' | 'notifications' | null>(null);
+  const [tourEnabled, setTourEnabled] = useState(false);
 
   const handleNav = (tab: string, params?: any) => {
     onNavigate(tab, params);
@@ -308,17 +355,124 @@ const Navbar = ({ lang, setLang, activeTab, setActiveTab, mobileMenuOpen, setMob
   return (
     <nav className={`fixed top-0 w-full z-40 px-4 py-3 border-b transition-colors duration-300 ${theme === 'dark' ? 'bg-black/90 border-white/10' : 'bg-white/90 border-gray-200'} backdrop-blur-xl`}>
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* Title Section: Adjusted padding and font size for mobile to prevent crowding */}
-        <div className="flex items-center gap-2 md:gap-3 cursor-pointer" onClick={() => handleNav('market')}>
-          <div className="bg-gradient-to-br from-green-500 to-green-700 p-2 md:p-2.5 rounded-xl shadow-lg shadow-green-900/20">
-            <LucideLeaf className="text-white" size={22} />
-          </div>
-          <h1 className={`text-xl md:text-2xl font-serif font-black tracking-wide ${theme === 'dark' ? 'text-white' : 'text-green-900'}`}>
-            {t.app_name[lang as Language]}
-          </h1>
+        
+        {/* LEFT SECTION: Title + Messages + Notification + Tour */}
+        <div className="flex items-center">
+             {/* Title */}
+            <div className="flex items-center gap-2 md:gap-3 cursor-pointer mr-8 md:mr-12" onClick={() => handleNav('market')}>
+                <div className="bg-gradient-to-br from-green-500 to-green-700 p-2 md:p-2.5 rounded-xl shadow-lg shadow-green-900/20">
+                    <LucideLeaf className="text-white" size={22} />
+                </div>
+                <h1 className={`text-xl md:text-2xl font-serif font-black tracking-wide ${theme === 'dark' ? 'text-white' : 'text-green-900'}`}>
+                    {t.app_name[lang as Language]}
+                </h1>
+            </div>
+
+            {/* MOVED CONTROLS: Inbox, Notification, Tour (Hidden on Mobile) */}
+            <div className="hidden md:flex items-center gap-4">
+                 
+                 {/* Interactive Tour Toggle */}
+                 <div className="flex items-center gap-2 border-r pr-4 border-gray-300 dark:border-gray-700 mr-2">
+                    <span className={`text-xs font-bold uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Tour</span>
+                    <button 
+                        onClick={() => setTourEnabled(!tourEnabled)}
+                        className={`w-10 h-5 rounded-full transition-colors relative ${tourEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                    >
+                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all ${tourEnabled ? 'left-6' : 'left-1'}`}></div>
+                    </button>
+                 </div>
+
+                 {/* Inbox Dropdown */}
+                 <div className="relative">
+                    <button 
+                        onClick={() => { setShowInbox(!showInbox); setShowNotifications(false); }}
+                        className={`p-2.5 rounded-full transition-all relative ${showInbox ? 'bg-green-600 text-white' : theme === 'dark' ? 'text-gray-300 hover:bg-white/10 bg-white/5' : 'text-gray-600 hover:bg-gray-100 bg-gray-100'}`}
+                    >
+                        <LucideMail size={20} strokeWidth={2.5} />
+                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></span>
+                    </button>
+                    {showInbox && (
+                        <div className={`absolute top-full left-0 mt-4 w-80 max-w-[90vw] rounded-2xl shadow-2xl overflow-hidden border animate-in fade-in slide-in-from-top-2 ${theme === 'dark' ? 'bg-gray-900 border-white/10' : 'bg-white border-gray-200'}`}>
+                            <div className="p-4 border-b border-gray-500/10 flex justify-between items-center">
+                                <h3 className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Messages</h3>
+                                <span className="text-xs text-green-500 font-bold bg-green-500/10 px-2 py-0.5 rounded-full">2 New</span>
+                            </div>
+                            <div className="max-h-64 overflow-y-auto">
+                                <div onClick={() => handleNav('messages', { chatId: '1' })} className={`p-4 hover:bg-white/5 cursor-pointer border-b border-gray-500/10 flex gap-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500 font-bold shrink-0">A</div>
+                                    <div>
+                                        <p className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Ahmed Musa</p>
+                                        <p className="text-xs line-clamp-1">Is the maize still available?</p>
+                                        <p className="text-[10px] opacity-50 mt-1">2m ago</p>
+                                    </div>
+                                </div>
+                                <div onClick={() => handleNav('messages', { chatId: '2' })} className={`p-4 hover:bg-white/5 cursor-pointer flex gap-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500 font-bold shrink-0">F</div>
+                                    <div>
+                                        <p className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Fatima Aliyu</p>
+                                        <p className="text-xs line-clamp-1">Confirmed delivery for tomorrow.</p>
+                                        <p className="text-[10px] opacity-50 mt-1">1h ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-3 text-center border-t border-gray-500/10 bg-black/5">
+                                <button onClick={() => handleNav('messages')} className="text-sm font-bold text-green-500 hover:underline">View All Messages</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Notifications Dropdown */}
+                <div className="relative">
+                    <button 
+                        onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false); }}
+                        className={`p-2.5 rounded-full transition-all relative ${showNotifications ? 'bg-green-600 text-white' : theme === 'dark' ? 'text-gray-300 hover:bg-white/10 bg-white/5' : 'text-gray-600 hover:bg-gray-100 bg-gray-100'}`}
+                    >
+                        <LucideBell size={20} strokeWidth={2.5} />
+                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></span>
+                    </button>
+                    {showNotifications && (
+                        <div className={`absolute top-full left-0 mt-4 w-80 max-w-[90vw] rounded-2xl shadow-2xl overflow-hidden border animate-in fade-in slide-in-from-top-2 ${theme === 'dark' ? 'bg-gray-900 border-white/10' : 'bg-white border-gray-200'}`}>
+                            <div className="p-4 border-b border-gray-500/10 flex justify-between items-center">
+                                <h3 className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Notifications</h3>
+                                <span className="text-xs text-green-500 font-bold bg-green-500/10 px-2 py-0.5 rounded-full">3 New</span>
+                            </div>
+                            <div className="max-h-64 overflow-y-auto">
+                                <div onClick={() => handleNav('market')} className={`p-4 hover:bg-white/5 cursor-pointer border-b border-gray-500/10 flex gap-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    <div className="mt-1"><LucideTrendingUp size={16} className="text-green-500"/></div>
+                                    <div>
+                                        <p className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Price Alert</p>
+                                        <p className="text-xs">Maize prices in Kano rose by 5% today.</p>
+                                        <p className="text-[10px] opacity-50 mt-1">10m ago</p>
+                                    </div>
+                                </div>
+                                <div onClick={() => handleNav('profile')} className={`p-4 hover:bg-white/5 cursor-pointer border-b border-gray-500/10 flex gap-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    <div className="mt-1"><LucideUserPlus size={16} className="text-blue-500"/></div>
+                                    <div>
+                                        <p className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>New Follower</p>
+                                        <p className="text-xs">Ibrahim Sani started following you.</p>
+                                        <p className="text-[10px] opacity-50 mt-1">30m ago</p>
+                                    </div>
+                                </div>
+                                <div onClick={() => handleNav('profile')} className={`p-4 hover:bg-white/5 cursor-pointer flex gap-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    <div className="mt-1"><LucidePackage size={16} className="text-yellow-500"/></div>
+                                    <div>
+                                        <p className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Order Update</p>
+                                        <p className="text-xs">Your order #1023 has been shipped.</p>
+                                        <p className="text-[10px] opacity-50 mt-1">2h ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-3 text-center border-t border-gray-500/10 bg-black/5">
+                                <button className="text-sm font-bold text-green-500 hover:underline">Mark all as read</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
 
-        {/* Desktop Nav */}
+        {/* Desktop Nav (Centered) */}
         <div className="hidden lg:flex gap-2">
           {tabs.map(tab => (
             <button
@@ -336,97 +490,9 @@ const Navbar = ({ lang, setLang, activeTab, setActiveTab, mobileMenuOpen, setMob
           ))}
         </div>
 
-        {/* Controls */}
+        {/* Right Controls (Minus Inbox/Notifications) */}
         <div className="flex items-center gap-2 md:gap-3">
           
-          {/* Inbox Dropdown - Hidden on Mobile */}
-          <div className="relative hidden md:block">
-            <button 
-                onClick={() => { setShowInbox(!showInbox); setShowNotifications(false); }}
-                className={`p-3 rounded-full transition-all relative ${showInbox ? 'bg-green-600 text-white' : theme === 'dark' ? 'text-gray-300 hover:bg-white/10 bg-white/5' : 'text-gray-600 hover:bg-gray-100 bg-gray-100'}`}
-            >
-               <LucideMail size={22} strokeWidth={2.5} />
-               <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></span>
-            </button>
-            {showInbox && (
-                <div className={`absolute top-full right-0 mt-4 w-80 max-w-[90vw] rounded-2xl shadow-2xl overflow-hidden border animate-in fade-in slide-in-from-top-2 ${theme === 'dark' ? 'bg-gray-900 border-white/10' : 'bg-white border-gray-200'}`}>
-                    <div className="p-4 border-b border-gray-500/10 flex justify-between items-center">
-                        <h3 className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Messages</h3>
-                        <span className="text-xs text-green-500 font-bold bg-green-500/10 px-2 py-0.5 rounded-full">2 New</span>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                        <div onClick={() => handleNav('messages', { chatId: '1' })} className={`p-4 hover:bg-white/5 cursor-pointer border-b border-gray-500/10 flex gap-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                            <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500 font-bold shrink-0">A</div>
-                            <div>
-                                <p className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Ahmed Musa</p>
-                                <p className="text-xs line-clamp-1">Is the maize still available?</p>
-                                <p className="text-[10px] opacity-50 mt-1">2m ago</p>
-                            </div>
-                        </div>
-                        <div onClick={() => handleNav('messages', { chatId: '2' })} className={`p-4 hover:bg-white/5 cursor-pointer flex gap-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                            <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500 font-bold shrink-0">F</div>
-                            <div>
-                                <p className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Fatima Aliyu</p>
-                                <p className="text-xs line-clamp-1">Confirmed delivery for tomorrow.</p>
-                                <p className="text-[10px] opacity-50 mt-1">1h ago</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="p-3 text-center border-t border-gray-500/10 bg-black/5">
-                        <button onClick={() => handleNav('messages')} className="text-sm font-bold text-green-500 hover:underline">View All Messages</button>
-                    </div>
-                </div>
-            )}
-          </div>
-
-          {/* Notifications Dropdown - Hidden on Mobile */}
-          <div className="relative hidden md:block">
-            <button 
-                onClick={() => { setShowNotifications(!showNotifications); setShowInbox(false); }}
-                className={`p-3 rounded-full transition-all relative ${showNotifications ? 'bg-green-600 text-white' : theme === 'dark' ? 'text-gray-300 hover:bg-white/10 bg-white/5' : 'text-gray-600 hover:bg-gray-100 bg-gray-100'}`}
-            >
-               <LucideBell size={22} strokeWidth={2.5} />
-               <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></span>
-            </button>
-            {showNotifications && (
-                <div className={`absolute top-full right-0 mt-4 w-80 max-w-[90vw] rounded-2xl shadow-2xl overflow-hidden border animate-in fade-in slide-in-from-top-2 ${theme === 'dark' ? 'bg-gray-900 border-white/10' : 'bg-white border-gray-200'}`}>
-                    <div className="p-4 border-b border-gray-500/10 flex justify-between items-center">
-                        <h3 className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Notifications</h3>
-                        <span className="text-xs text-green-500 font-bold bg-green-500/10 px-2 py-0.5 rounded-full">3 New</span>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                        <div onClick={() => handleNav('market')} className={`p-4 hover:bg-white/5 cursor-pointer border-b border-gray-500/10 flex gap-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                            <div className="mt-1"><LucideTrendingUp size={16} className="text-green-500"/></div>
-                            <div>
-                                <p className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Price Alert</p>
-                                <p className="text-xs">Maize prices in Kano rose by 5% today.</p>
-                                <p className="text-[10px] opacity-50 mt-1">10m ago</p>
-                            </div>
-                        </div>
-                        <div onClick={() => handleNav('profile')} className={`p-4 hover:bg-white/5 cursor-pointer border-b border-gray-500/10 flex gap-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                            <div className="mt-1"><LucideUserPlus size={16} className="text-blue-500"/></div>
-                            <div>
-                                <p className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>New Follower</p>
-                                <p className="text-xs">Ibrahim Sani started following you.</p>
-                                <p className="text-[10px] opacity-50 mt-1">30m ago</p>
-                            </div>
-                        </div>
-                        <div onClick={() => handleNav('profile')} className={`p-4 hover:bg-white/5 cursor-pointer flex gap-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                             <div className="mt-1"><LucidePackage size={16} className="text-yellow-500"/></div>
-                             <div>
-                                 <p className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Order Update</p>
-                                 <p className="text-xs">Your order #1023 has been shipped.</p>
-                                 <p className="text-[10px] opacity-50 mt-1">2h ago</p>
-                             </div>
-                        </div>
-                    </div>
-                     <div className="p-3 text-center border-t border-gray-500/10 bg-black/5">
-                        <button className="text-sm font-bold text-green-500 hover:underline">Mark all as read</button>
-                    </div>
-                </div>
-            )}
-          </div>
-
           <button 
              onClick={() => handleNav('profile')}
              className={`hidden md:block p-3 rounded-full transition-all ${activeTab === 'profile' ? 'bg-green-600 text-white' : theme === 'dark' ? 'text-gray-300 hover:bg-white/10 bg-white/5' : 'text-gray-600 hover:bg-gray-100 bg-gray-100'}`}
@@ -578,900 +644,224 @@ const Navbar = ({ lang, setLang, activeTab, setActiveTab, mobileMenuOpen, setMob
   );
 };
 
-// 2. Marketplace Components
-const ProductCard = ({ product, lang, onClick, theme }: any) => {
-  const daysLeft = calculateDaysLeft(product.expiryDate);
-  // Mock distance for demo purposes
-  const distance = Math.floor(Math.random() * 500) + 10; 
-  const shippingCost = distance * 50; // Mock calculation
+// --- Main App Component ---
 
-  const [showEscrow, setShowEscrow] = useState(false);
+const App = () => {
+  const [lang, setLang] = useState<Language>('EN');
+  const [theme, setTheme] = useState<Theme>('light');
+  const [activeTab, setActiveTab] = useState('market');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [introComplete, setIntroComplete] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showLiveExpert, setShowLiveExpert] = useState(false);
 
-  return (
-    <div 
-      className="group relative glass-panel rounded-3xl overflow-hidden hover:scale-[1.02] transition-all duration-500 nature-shadow border-0 ring-1 ring-white/10 hover:ring-green-500/50 flex flex-col h-full"
-    >
-      {/* Escrow Modal */}
-      {showEscrow && (
-          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in">
-              <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
-                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <LucideShieldCheck size={32}/>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Secure Escrow</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                      Your payment of <span className="font-bold">₦{product.price.toLocaleString()}</span> will be held safely until you confirm delivery.
-                  </p>
-                  <button onClick={() => setShowEscrow(false)} className="w-full bg-green-600 text-white font-bold py-3 rounded-xl mb-2">Proceed to Payment</button>
-                  <button onClick={() => setShowEscrow(false)} className="text-gray-500 text-sm">Cancel</button>
-              </div>
-          </div>
-      )}
+  // Simple routing params mock
+  const [navParams, setNavParams] = useState<any>(null);
 
-      {/* Image Section */}
-      <div className="h-64 overflow-hidden relative cursor-pointer" onClick={onClick}>
-        <LazyImage 
-          src={product.image} 
-          alt={product.name} 
-          className="w-full h-full"
-          imageClassName="transition-transform duration-700 group-hover:scale-110" 
-        />
-        
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-300" />
+  const handleNavigate = (tab: string, params?: any) => {
+    setActiveTab(tab);
+    if (params) setNavParams(params);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-        {/* Top Badges */}
-        <div className="absolute top-4 right-4 flex gap-2">
-             <span className={`text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide backdrop-blur-md shadow-lg ${product.type === 'buy' ? 'bg-blue-600/90 text-white' : 'bg-green-600/90 text-white'}`}>
-                {product.type === 'buy' ? 'Request' : product.category}
-             </span>
-        </div>
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
 
-        {/* Expiry Badge */}
-        {daysLeft !== null && daysLeft <= 5 && (
-            <div className="absolute top-4 left-4">
-                 <span className="text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide backdrop-blur-md shadow-lg bg-red-600/90 text-white flex items-center gap-1">
-                    <LucideClock size={12}/> Expires in {daysLeft}d
-                 </span>
-            </div>
-        )}
+  if (!introComplete) {
+    return <IntroScreen onComplete={() => setIntroComplete(true)} />;
+  }
 
-        {/* Quick View Button (Visible on Hover) */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px]">
-            <button className="bg-white text-black px-6 py-3 rounded-full font-bold flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 shadow-xl hover:scale-105">
-                <LucideEye size={20} /> Quick View
-            </button>
-        </div>
-
-        {/* Price Tag (Bottom Left) */}
-        <div className="absolute bottom-4 left-4">
-             <span className="text-yellow-400 font-black text-2xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-tight">
-                ₦{product.price.toLocaleString()}
-             </span>
-        </div>
-      </div>
-
-      {/* Details Section */}
-      <div className={`p-5 flex flex-col flex-1 gap-4 ${theme === 'light' ? 'bg-white/90 text-gray-900' : 'bg-black/40 text-gray-100'}`}>
-        
-        {/* Title */}
-        <h3 className={`text-xl font-bold leading-tight font-serif line-clamp-2 group-hover:text-green-500 transition-colors`}>
-            {product.name}
-        </h3>
-
-        {/* Metadata Grid */}
-        <div className="grid grid-cols-2 gap-y-2 text-sm opacity-80">
-            <div className="flex items-center gap-2">
-                <LucideMapPin size={14} className="text-green-500 shrink-0" />
-                <span className="truncate">{product.location}</span>
-            </div>
-            <div className="flex items-center gap-2">
-                <LucideTruck size={14} className="text-blue-500 shrink-0" />
-                <span className="truncate">~{distance}km (₦{shippingCost.toLocaleString()})</span>
-            </div>
-        </div>
-
-        {/* Divider */}
-        <div className={`h-px w-full ${theme === 'light' ? 'bg-gray-200' : 'bg-white/10'}`}></div>
-
-        {/* Seller Info & CTA */}
-        <div className="flex justify-between items-center mt-auto pt-1">
-             <div className="flex items-center gap-3">
-                 <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden ring-2 ring-white/20 relative">
-                    <img src={`https://ui-avatars.com/api/?name=${product.sellerName}&background=random`} alt="seller" className="w-full h-full object-cover"/>
-                 </div>
-                 <div className="flex flex-col">
-                     <div className="flex items-center gap-1">
-                         <span className="text-xs font-bold leading-none">{product.sellerName.split(' ')[0]}</span>
-                         {product.sellerTier >= 2 && <LucideBadgeCheck size={12} className="text-blue-500"/>}
-                     </div>
-                     <span className="text-[10px] opacity-60">
-                         {product.sellerTier === 3 ? 'Cooperative' : product.sellerTier === 2 ? 'Verified' : 'Basic'}
-                     </span>
-                 </div>
-             </div>
-             
-             <div className="flex gap-2">
-                <button 
-                    onClick={() => setShowEscrow(true)}
-                    className={`p-2.5 rounded-xl transition-colors ${theme === 'light' ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-green-600/20 hover:bg-green-600 hover:text-white text-green-400'}`} title="Buy with Escrow">
-                    <LucideShieldCheck size={20} />
-                </button>
-                <button className={`p-2.5 rounded-xl transition-colors ${theme === 'light' ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' : 'bg-white/5 hover:bg-white/20 text-gray-400'}`} title="Chat">
-                    <LucideMessageCircle size={20} />
-                </button>
-             </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// 3. Marketplace Component
-const Marketplace = ({ lang, theme }: { lang: Language, theme: Theme }) => {
-  const [filter, setFilter] = useState('All');
-  const [search, setSearch] = useState('');
-  
-  const filtered = MOCK_PRODUCTS.filter(p => 
-    (filter === 'All' || p.category === filter) &&
-    (p.name.toLowerCase().includes(search.toLowerCase()) || p.location.toLowerCase().includes(search.toLowerCase()))
-  );
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center sticky top-20 z-30 py-2 backdrop-blur-md bg-transparent">
-        <div className="relative w-full md:w-96 group">
-          <LucideSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" size={20} />
-          <input 
-            type="text" 
-            placeholder={TRANSLATIONS.search_placeholder[lang]} 
-            className={`w-full pl-12 pr-4 py-3 rounded-2xl outline-none border transition-all shadow-sm focus:shadow-md ${theme === 'dark' ? 'bg-gray-800 border-gray-700 focus:border-green-500 text-white placeholder-gray-500' : 'bg-white border-gray-200 focus:border-green-500 text-gray-900'}`}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar">
-          {['All', 'Poultry', 'Fish', 'Feed'].map(cat => (
-            <button
-              key={cat}
-              onClick={() => setFilter(cat)}
-              className={`px-6 py-2.5 rounded-xl font-bold whitespace-nowrap transition-all ${
-                filter === cat 
-                  ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' 
-                  : theme === 'dark' ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map(product => (
-          <ProductCard key={product.id} product={product} lang={lang} theme={theme} onClick={() => {}} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// 4. Forum Component
-const Forum = ({ lang, theme }: { lang: Language, theme: Theme }) => {
-    const [regionFilter, setRegionFilter] = useState<'All' | 'My State'>('All');
-    
-    // Simulate current user location state for filtering
-    const userState = MOCK_USER.location; 
-
-    const filteredGroups = MOCK_GROUPS.filter(g => 
-        regionFilter === 'All' ? true : g.region === userState || g.region === 'National'
-    );
-
+  if (!isAuthenticated) {
     return (
-        <div className="space-y-6">
-            <div className="flex gap-2 mb-4">
-                 <button 
-                    onClick={() => setRegionFilter('All')}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${regionFilter === 'All' ? 'bg-green-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                 >
-                     All Groups
-                 </button>
-                 <button 
-                    onClick={() => setRegionFilter('My State')}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${regionFilter === 'My State' ? 'bg-green-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                 >
-                     My State ({userState})
-                 </button>
-            </div>
-
-            <div className="flex gap-4 overflow-x-auto pb-4">
-                {filteredGroups.map(group => (
-                    <div key={group.id} className={`min-w-[280px] p-4 rounded-2xl flex items-center gap-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white border border-gray-200'}`}>
-                        <img src={group.image} alt={group.name} className="w-16 h-16 rounded-xl object-cover" />
-                        <div>
-                            <h4 className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{group.name}</h4>
-                            <p className="text-xs text-gray-500">{group.members.toLocaleString()} members</p>
-                            <span className="text-[10px] bg-gray-500/10 px-2 py-0.5 rounded text-gray-500">{group.region || 'General'}</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            
-             <div className="space-y-4">
-                {MOCK_POSTS.map(post => (
-                    <div key={post.id} className={`p-6 rounded-3xl ${theme === 'dark' ? 'bg-gray-800/50 border border-white/5' : 'bg-white border border-gray-100 shadow-sm'}`}>
-                        <div className="flex items-center gap-3 mb-4">
-                             <img src={post.authorAvatar} alt={post.author} className="w-10 h-10 rounded-full" />
-                             <div>
-                                 <h4 className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{post.author}</h4>
-                                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                                     <span className={`px-2 py-0.5 rounded-full ${post.role === 'Expert' ? 'bg-blue-500/10 text-blue-500' : 'bg-green-500/10 text-green-500'}`}>{post.role}</span>
-                                     <span>• {post.timestamp}</span>
-                                 </div>
-                             </div>
-                        </div>
-                        <h3 className={`text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{post.title}</h3>
-                        <p className={`mb-4 leading-relaxed ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{post.content}</p>
-                        {post.image && (
-                            <div className="mb-4 rounded-2xl overflow-hidden h-64">
-                                <img src={post.image} alt="Post content" className="w-full h-full object-cover" />
-                            </div>
-                        )}
-                        <div className="flex items-center gap-6 text-gray-500 text-sm font-medium border-t border-gray-500/10 pt-4">
-                            <button className="flex items-center gap-2 hover:text-red-500"><LucideHeart size={18} /> {post.likes}</button>
-                            <button className="flex items-center gap-2 hover:text-blue-500"><LucideMessageCircle size={18} /> {post.comments.length}</button>
-                            <button className="flex items-center gap-2 ml-auto hover:text-green-500"><LucideShare2 size={18} /></button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    )
-}
-
-// 5. AI Guide Component
-const AIGuide = ({ lang, theme }: { lang: Language, theme: Theme }) => {
-    const [messages, setMessages] = useState<ChatMessage[]>([
-        { role: 'model', text: TRANSLATIONS.ai_welcome[lang] }
-    ]);
-    const [input, setInput] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [showLive, setShowLive] = useState(false);
-    const [isPro, setIsPro] = useState(false); // Simulated state
-    const [showProModal, setShowProModal] = useState(false);
-
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
-    const handleSend = async () => {
-        if (!input.trim()) return;
-
-        // Simple mock trigger for "advanced" queries
-        if (input.toLowerCase().includes('disease') || input.toLowerCase().includes('diagnosis')) {
-            if (!isPro) {
-                setShowProModal(true);
-                return;
-            }
-        }
-        
-        const userMsg = input;
-        setInput('');
-        setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-        setLoading(true);
-
-        try {
-            const result = await askFarmingAssistant(userMsg);
-            setMessages(prev => [...prev, { role: 'model', text: result.text || "I couldn't generate a response." }]);
-        } catch (error) {
-             setMessages(prev => [...prev, { role: 'model', text: "Sorry, I encountered an error connecting to the AI." }]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className={`h-[calc(100vh-140px)] flex flex-col rounded-3xl overflow-hidden border relative ${theme === 'dark' ? 'bg-gray-800/50 border-white/5' : 'bg-white border-gray-200 shadow-xl'}`}>
-             {showLive && <LiveExpert onClose={() => setShowLive(false)} language={lang} />}
-
-             {/* Pro Upgrade Modal */}
-             {showProModal && (
-                 <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in">
-                     <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center relative overflow-hidden">
-                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 to-yellow-600"></div>
-                         <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                             <LucideCrown size={32} fill="currentColor"/>
-                         </div>
-                         <h3 className="text-2xl font-black text-gray-900 mb-2">Upgrade to AgroPro</h3>
-                         <p className="text-gray-600 mb-6">Unlock advanced disease diagnosis, personalized feed formulas, and priority market insights.</p>
-                         <button onClick={() => { setIsPro(true); setShowProModal(false); }} className="w-full bg-black text-white font-bold py-4 rounded-xl mb-3 shadow-lg hover:scale-[1.02] transition-transform">
-                             Get Pro - ₦1,500/mo
-                         </button>
-                         <button onClick={() => setShowProModal(false)} className="text-gray-500 font-bold text-sm">Maybe Later</button>
-                     </div>
-                 </div>
-             )}
-             
-             <div className="p-4 border-b border-gray-500/10 flex justify-between items-center bg-green-600 text-white">
-                 <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                         <LucideLeaf size={20} />
-                     </div>
-                     <div>
-                         <h3 className="font-bold flex items-center gap-2">Agro AI {isPro && <span className="bg-yellow-400 text-black text-[10px] px-1.5 rounded uppercase font-black">Pro</span>}</h3>
-                         <p className="text-xs opacity-80">Powered by Gemini 3.0</p>
-                     </div>
-                 </div>
-                 <div className="flex gap-2">
-                    {!isPro && (
-                        <button onClick={() => setShowProModal(true)} className="flex items-center gap-1 bg-black/20 hover:bg-black/30 text-white px-3 py-1.5 rounded-full text-xs font-bold transition-colors">
-                            <LucideCrown size={14} /> Upgrade
-                        </button>
-                    )}
-                    <button 
-                        onClick={() => setShowLive(true)}
-                        className="flex items-center gap-2 bg-white text-green-700 px-4 py-2 rounded-full font-bold text-sm shadow-lg animate-pulse hover:animate-none hover:scale-105 transition-transform"
-                    >
-                        <LucideMic size={16} /> Voice
-                    </button>
-                 </div>
-             </div>
-
-             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                 {messages.map((msg, idx) => (
-                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                         <div className={`max-w-[80%] p-4 rounded-2xl ${
-                             msg.role === 'user' 
-                             ? 'bg-green-600 text-white rounded-tr-none' 
-                             : theme === 'dark' ? 'bg-gray-700 text-white rounded-tl-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'
-                         }`}>
-                             {msg.text}
-                         </div>
-                     </div>
-                 ))}
-                 {loading && (
-                     <div className="flex justify-start">
-                         <div className={`p-4 rounded-2xl rounded-tl-none flex items-center gap-2 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'}`}>
-                             <LucideLoader2 size={16} className="animate-spin" /> {TRANSLATIONS.ai_thinking[lang]}
-                         </div>
-                     </div>
-                 )}
-                 <div ref={messagesEndRef} />
-             </div>
-
-             <div className={`p-4 border-t ${theme === 'dark' ? 'border-white/5 bg-gray-900' : 'border-gray-100 bg-gray-50'}`}>
-                 <div className="relative flex items-center gap-2">
-                     <input 
-                        type="text" 
-                        value={input}
-                        onChange={e => setInput(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleSend()}
-                        placeholder="Ask about crops, diagnosis, prices..."
-                        className={`flex-1 p-3 rounded-xl pr-12 outline-none border transition-colors ${theme === 'dark' ? 'bg-gray-800 border-gray-700 focus:border-green-500 text-white' : 'bg-white border-gray-200 focus:border-green-500 text-gray-900'}`}
-                     />
-                     <button 
-                        onClick={handleSend}
-                        disabled={!input.trim() || loading}
-                        className="p-3 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                     >
-                         <LucideSend size={20} />
-                     </button>
-                 </div>
-             </div>
-        </div>
-    )
-}
-
-// 6. Settings Component (New)
-const Settings = ({ theme, lang }: { theme: Theme, lang: Language }) => {
-    const [editingEmail, setEditingEmail] = useState(false);
-    const [editingPassword, setEditingPassword] = useState(false);
-    const [email, setEmail] = useState('zahra@agromarket.ng');
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [notification, setNotification] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
-
-    const handleSaveEmail = () => {
-        setNotification({ msg: 'Email updated successfully. Please verify your new address.', type: 'success' });
-        setEditingEmail(false);
-        setTimeout(() => setNotification(null), 3000);
-    }
-
-    const handleSavePassword = () => {
-        if (newPassword !== confirmPassword) {
-            setNotification({ msg: 'Passwords do not match.', type: 'error' });
-            return;
-        }
-        setNotification({ msg: 'Password changed successfully.', type: 'success' });
-        setEditingPassword(false);
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setTimeout(() => setNotification(null), 3000);
-    }
-
-    return (
-        <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h2 className={`text-3xl font-serif font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Settings</h2>
-            
-            {notification && (
-                <div className={`p-4 rounded-xl flex items-center gap-3 ${notification.type === 'success' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
-                    {notification.type === 'success' ? <LucideCheckCircle size={20} /> : <LucideAlertTriangle size={20} />}
-                    <span className="font-medium">{notification.msg}</span>
-                </div>
+        <>
+            <AuthPage onLogin={handleLogin} onGoogleClick={() => setShowAuthModal(true)} />
+            {showAuthModal && (
+                <GoogleAuthModal 
+                    onComplete={() => { setShowAuthModal(false); handleLogin(); }}
+                    onClose={() => setShowAuthModal(false)}
+                />
             )}
+        </>
+    );
+  }
 
-            {/* Account Security Section */}
-            <div className={`p-6 rounded-3xl ${theme === 'dark' ? 'bg-gray-800 border border-white/5' : 'bg-white border border-gray-200 shadow-sm'}`}>
-                <div className="flex items-center gap-3 mb-6 border-b border-gray-500/10 pb-4">
-                    <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500"><LucideShieldCheck size={24} /></div>
-                    <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Account Security</h3>
-                </div>
-                
-                <div className="space-y-6">
-                    {/* Email Change */}
+  const t = TRANSLATIONS;
+
+  return (
+    <div className={`min-h-screen font-sans transition-colors duration-300 ${theme === 'dark' ? 'bg-black text-gray-100' : 'bg-[#FAFDF9] text-gray-900'}`}>
+      <Navbar 
+        lang={lang} 
+        setLang={setLang} 
+        activeTab={activeTab} 
+        setActiveTab={handleNavigate} 
+        mobileMenuOpen={mobileMenuOpen} 
+        setMobileMenuOpen={setMobileMenuOpen} 
+        theme={theme}
+        onNavigate={handleNavigate}
+      />
+
+      <main className="pt-24 pb-20 px-4 max-w-7xl mx-auto">
+        
+        {activeTab === 'market' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                     <div>
-                        <div className="flex justify-between items-center mb-2">
-                            <label className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Email Address</label>
-                            {!editingEmail && (
-                                <button onClick={() => setEditingEmail(true)} className="text-green-500 text-sm font-bold flex items-center gap-1 hover:underline">
-                                    <LucideEdit size={14} /> Change
-                                </button>
-                            )}
-                        </div>
-                        {editingEmail ? (
-                            <div className="flex gap-2">
-                                <input 
-                                    type="email" 
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className={`flex-1 p-3 rounded-xl outline-none border ${theme === 'dark' ? 'bg-gray-900 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
-                                />
-                                <button onClick={handleSaveEmail} className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl transition-colors"><LucideSave size={20}/></button>
-                                <button onClick={() => setEditingEmail(false)} className={`p-3 rounded-xl border ${theme === 'dark' ? 'border-gray-700 hover:bg-gray-700 text-gray-400' : 'border-gray-200 hover:bg-gray-100 text-gray-600'}`}><LucideX size={20}/></button>
-                            </div>
-                        ) : (
-                            <p className={`text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{email}</p>
-                        )}
+                        <h2 className="text-3xl font-serif font-bold">{t.hero_title[lang]}</h2>
+                        <p className="opacity-70">{t.hero_subtitle[lang]}</p>
                     </div>
+                    <div className="flex gap-2">
+                         <button className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition-colors shadow-lg shadow-green-600/20">
+                            {t.btn_sell[lang]}
+                         </button>
+                    </div>
+                </div>
 
-                    <div className={`h-px w-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}></div>
+                {/* Categories */}
+                <div className="flex overflow-x-auto pb-4 gap-3 mb-8 no-scrollbar">
+                    {['All', 'Poultry', 'Fish', 'Feed', 'Equipment', 'Services'].map((cat, i) => (
+                        <button key={cat} className={`px-6 py-2 rounded-full whitespace-nowrap font-bold transition-all ${i===0 ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'}`}>
+                            {cat}
+                        </button>
+                    ))}
+                </div>
 
-                    {/* Password Change */}
-                    <div>
-                         <div className="flex justify-between items-center mb-2">
-                            <label className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Password</label>
-                            {!editingPassword && (
-                                <button onClick={() => setEditingPassword(true)} className="text-green-500 text-sm font-bold flex items-center gap-1 hover:underline">
-                                    <LucideKey size={14} /> Reset Password
-                                </button>
-                            )}
-                        </div>
-                        {editingPassword ? (
-                            <div className="space-y-3 p-4 rounded-xl bg-gray-500/5 border border-gray-500/10">
-                                <input 
-                                    type="password" 
-                                    placeholder="Current Password"
-                                    value={currentPassword}
-                                    onChange={(e) => setCurrentPassword(e.target.value)}
-                                    className={`w-full p-3 rounded-xl outline-none border ${theme === 'dark' ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900'}`}
-                                />
-                                <input 
-                                    type="password" 
-                                    placeholder="New Password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    className={`w-full p-3 rounded-xl outline-none border ${theme === 'dark' ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900'}`}
-                                />
-                                <input 
-                                    type="password" 
-                                    placeholder="Confirm New Password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className={`w-full p-3 rounded-xl outline-none border ${theme === 'dark' ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900'}`}
-                                />
-                                <div className="flex justify-end gap-2 pt-2">
-                                    <button onClick={() => setEditingPassword(false)} className={`px-4 py-2 rounded-lg font-bold text-sm ${theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>Cancel</button>
-                                    <button onClick={handleSavePassword} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-lg shadow-green-600/20">Update Password</button>
+                {/* Products Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {MOCK_PRODUCTS.map(product => (
+                        <div key={product.id} className={`group rounded-2xl overflow-hidden border transition-all hover:shadow-2xl hover:-translate-y-1 ${theme === 'dark' ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100 shadow-sm'}`}>
+                            <div className="relative h-56 overflow-hidden">
+                                <LazyImage src={product.image} alt={product.name} />
+                                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur text-black text-xs font-bold px-3 py-1 rounded-full">
+                                    {product.category}
                                 </div>
+                                {product.type === 'buy' && (
+                                     <div className="absolute top-3 left-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                                        Wanted
+                                     </div>
+                                )}
                             </div>
-                        ) : (
-                            <p className={`text-lg font-medium tracking-widest ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>••••••••••••</p>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* General Settings */}
-            <div className={`p-6 rounded-3xl ${theme === 'dark' ? 'bg-gray-800 border border-white/5' : 'bg-white border border-gray-200 shadow-sm'}`}>
-                <div className="flex items-center gap-3 mb-6 border-b border-gray-500/10 pb-4">
-                    <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500"><LucideSettings size={24} /></div>
-                    <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Preferences</h3>
-                </div>
-                
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <span className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Push Notifications</span>
-                        <div className="w-12 h-6 bg-green-600 rounded-full relative cursor-pointer"><div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div></div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Email Updates</span>
-                        <div className="w-12 h-6 bg-gray-600 rounded-full relative cursor-pointer"><div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full"></div></div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                         <span className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Two-Factor Authentication</span>
-                         <div className="w-12 h-6 bg-green-600 rounded-full relative cursor-pointer"><div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div></div>
-                    </div>
-                </div>
-            </div>
-
-            <button className="w-full py-4 text-red-500 font-bold bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-colors flex items-center justify-center gap-2">
-                <LucideLogOut size={20} /> Sign Out
-            </button>
-        </div>
-    )
-}
-
-// 7. Messages Component (New)
-const Messages = ({ selectedChatId, theme, lang }: { selectedChatId?: string, theme: Theme, lang: Language }) => {
-    const [activeChat, setActiveChat] = useState<string | null>(selectedChatId || null);
-    const [newMessage, setNewMessage] = useState('');
-    
-    // Mock Data for Chats
-    const chats = [
-        { id: '1', name: 'Ahmed Musa', avatar: 'A', lastMsg: 'Is the maize still available?', time: '2m', unread: 1, color: 'bg-blue-500' },
-        { id: '2', name: 'Fatima Aliyu', avatar: 'F', lastMsg: 'Confirmed delivery for tomorrow.', time: '1h', unread: 0, color: 'bg-yellow-500' },
-        { id: '3', name: 'Kano Feeds', avatar: 'K', lastMsg: 'We have restocked broiler mash.', time: '1d', unread: 0, color: 'bg-green-500' }
-    ];
-
-    const [chatHistory, setChatHistory] = useState([
-        { id: '1', sender: 'them', text: 'Hello, I saw your listing for white maize.', time: '10:30 AM' },
-        { id: '2', sender: 'me', text: 'Yes, it is available. How many bags do you need?', time: '10:32 AM' },
-        { id: '3', sender: 'them', text: 'I need about 50 bags. What is your best price?', time: '10:35 AM' },
-        { id: '4', sender: 'me', text: 'For 50 bags, I can do ₦34,000 per bag.', time: '10:36 AM' },
-        { id: '5', sender: 'them', text: 'Is the maize still available?', time: '10:40 AM' }
-    ]);
-
-    const handleSend = () => {
-        if(!newMessage.trim()) return;
-        setChatHistory([...chatHistory, { id: Date.now().toString(), sender: 'me', text: newMessage, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
-        setNewMessage('');
-    }
-
-    return (
-        <div className={`h-[calc(100vh-140px)] rounded-3xl overflow-hidden border flex ${theme === 'dark' ? 'bg-gray-800 border-white/5' : 'bg-white border-gray-200 shadow-xl'}`}>
-            {/* Sidebar List */}
-            <div className={`w-full md:w-80 border-r ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} flex flex-col ${activeChat ? 'hidden md:flex' : 'flex'}`}>
-                <div className="p-4 border-b border-gray-500/10">
-                    <h3 className={`text-xl font-bold font-serif ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Messages</h3>
-                    <div className="mt-4 relative">
-                        <LucideSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                        <input type="text" placeholder="Search chats..." className={`w-full pl-9 p-2 rounded-lg text-sm outline-none ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`} />
-                    </div>
-                </div>
-                <div className="overflow-y-auto flex-1">
-                    {chats.map(chat => (
-                        <div 
-                           key={chat.id} 
-                           onClick={() => setActiveChat(chat.id)}
-                           className={`p-4 flex gap-3 cursor-pointer transition-colors border-b border-gray-500/5 ${activeChat === chat.id ? (theme === 'dark' ? 'bg-white/10' : 'bg-green-50') : 'hover:bg-gray-500/5'}`}
-                        >
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold shrink-0 ${chat.color}`}>
-                                {chat.avatar}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start">
-                                    <h4 className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{chat.name}</h4>
-                                    <span className="text-xs text-gray-500">{chat.time}</span>
+                            <div className="p-5">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="font-bold text-lg leading-tight group-hover:text-green-600 transition-colors">{product.name}</h3>
                                 </div>
-                                <p className={`text-sm truncate ${chat.unread ? 'font-bold text-green-500' : 'text-gray-500'}`}>{chat.lastMsg}</p>
+                                <p className="text-2xl font-serif font-black text-green-600 mb-3">₦{product.price.toLocaleString()}</p>
+                                <div className="flex items-center gap-2 text-sm opacity-60 mb-4">
+                                    <LucideMapPin size={14}/> {product.location}
+                                </div>
+                                <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                                     <div className="flex items-center gap-2">
+                                         <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold">{product.sellerName[0]}</div>
+                                         <span className="text-xs font-bold opacity-70">{product.sellerName}</span>
+                                     </div>
+                                     <button className="text-sm font-bold text-green-600 hover:underline">Contact</button>
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
+        )}
 
-            {/* Chat Area */}
-            {activeChat ? (
-                <div className="flex-1 flex flex-col h-full bg-pattern">
-                    {/* Header */}
-                    <div className={`p-4 border-b flex items-center gap-3 ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                         <button onClick={() => setActiveChat(null)} className="md:hidden p-2 hover:bg-gray-500/10 rounded-full"><LucideChevronLeft size={20}/></button>
-                         <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">A</div>
-                         <div>
-                             <h4 className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Ahmed Musa</h4>
-                             <p className="text-xs text-green-500 flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full"></span> Online</p>
-                         </div>
-                         <div className="ml-auto flex gap-2 text-gray-400">
-                             <button className="p-2 hover:bg-gray-500/10 rounded-full"><LucidePhone size={20}/></button>
-                             <button className="p-2 hover:bg-gray-500/10 rounded-full"><LucideMoreVertical size={20}/></button>
-                         </div>
-                    </div>
-
-                    {/* Messages */}
-                    <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${theme === 'dark' ? 'bg-black/20' : 'bg-gray-50'}`}>
-                        {chatHistory.map(msg => (
-                            <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[70%] p-3 rounded-2xl text-sm ${
-                                    msg.sender === 'me' 
-                                    ? 'bg-green-600 text-white rounded-tr-none shadow-lg shadow-green-600/20' 
-                                    : theme === 'dark' ? 'bg-gray-700 text-white rounded-tl-none' : 'bg-white text-gray-800 rounded-tl-none shadow-sm border'
-                                }`}>
-                                    <p>{msg.text}</p>
-                                    <p className={`text-[10px] mt-1 text-right ${msg.sender === 'me' ? 'text-green-200' : 'text-gray-400'}`}>{msg.time}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Input */}
-                    <div className={`p-4 border-t ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                        <div className={`flex items-center gap-2 p-1 rounded-2xl border ${theme === 'dark' ? 'bg-gray-900 border-gray-700' : 'bg-gray-100 border-transparent'}`}>
-                            <button className="p-3 text-gray-400 hover:text-green-500"><LucidePlus size={20}/></button>
-                            <input 
-                                type="text" 
-                                placeholder="Type a message..." 
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                className="flex-1 bg-transparent outline-none py-3"
-                            />
-                            <button onClick={handleSend} className="p-3 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow-md"><LucideSend size={18}/></button>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="hidden md:flex flex-1 flex-col items-center justify-center text-gray-400 p-8 text-center">
-                    <div className="w-24 h-24 bg-gray-500/10 rounded-full flex items-center justify-center mb-4">
-                        <LucideMessageCircle size={40} className="text-gray-500"/>
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">Select a Conversation</h3>
-                    <p>Choose a chat from the sidebar to start messaging.</p>
-                </div>
-            )}
-        </div>
-    )
-}
-
-// 8. Profile Component (New)
-const Profile = ({ user, theme, lang }: { user: UserProfile, theme: Theme, lang: Language }) => {
-  const t = TRANSLATIONS;
-
-  // Verification Badge Logic
-  const getVerificationBadge = () => {
-    switch (user.verificationTier) {
-        case 3:
-            return { icon: <LucideCrown size={16} fill="currentColor" className="text-yellow-500"/>, label: 'Cooperative Member', bg: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' };
-        case 2:
-            return { icon: <LucideBadgeCheck size={16} fill="currentColor" className="text-blue-500 text-white"/>, label: 'Verified Farmer', bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' };
-        default:
-            return { icon: <LucideCheckCircle size={16} />, label: 'Basic Verification', bg: 'bg-gray-500/10 text-gray-500 border-gray-500/20' };
-    }
-  };
-
-  const badge = getVerificationBadge();
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header Card */}
-      <div className={`relative rounded-3xl overflow-hidden ${theme === 'dark' ? 'bg-gray-800 border border-white/5' : 'bg-white border border-gray-200 shadow-sm'}`}>
-        <div className="h-48 bg-gradient-to-r from-green-800 to-green-600 relative">
-          <div className="absolute inset-0 bg-black/20"></div>
-          {/* Cover image pattern */}
-          <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-        </div>
-        
-        <div className="px-6 pb-6 relative">
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-             <div className="-mt-16 relative">
-               <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 overflow-hidden bg-gray-200">
-                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-               </div>
-               {user.isVerified && (
-                 <div className="absolute bottom-2 right-2 bg-blue-500 text-white p-1 rounded-full border-4 border-white dark:border-gray-800 shadow-lg" title="Verified">
-                   <LucideCheck size={16} strokeWidth={4} />
+        {activeTab === 'forum' && (
+             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl mx-auto">
+                 <div className="flex justify-between items-center mb-6">
+                     <h2 className="text-2xl font-bold">Community Forum</h2>
+                     <button className="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2">
+                         <LucidePlus size={16}/> New Post
+                     </button>
                  </div>
-               )}
-             </div>
+                 
+                 {/* Groups Horizontal */}
+                 <div className="flex overflow-x-auto pb-6 gap-4 no-scrollbar mb-4">
+                     {MOCK_GROUPS.map(group => (
+                         <div key={group.id} className="min-w-[200px] h-32 rounded-xl relative overflow-hidden flex items-end p-3 cursor-pointer group">
+                             <img src={group.image} className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-110" alt={group.name}/>
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                             <div className="relative z-10 text-white">
+                                 <p className="font-bold text-sm leading-tight">{group.name}</p>
+                                 <p className="text-[10px] opacity-80">{group.members.toLocaleString()} members</p>
+                             </div>
+                         </div>
+                     ))}
+                 </div>
 
-             <div className="flex-1 mt-4 md:mt-2 w-full">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h2 className={`text-3xl font-bold font-serif ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                      {user.name}
-                    </h2>
-                    <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{user.handle}</p>
-                  </div>
-                  <div className="flex gap-3">
-                     <button className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full font-bold transition-colors shadow-lg shadow-green-600/20">
-                       Edit Profile
-                     </button>
-                     <button className={`p-2 rounded-full border transition-colors ${theme === 'dark' ? 'border-gray-600 hover:bg-gray-700 text-gray-300' : 'border-gray-300 hover:bg-gray-100 text-gray-600'}`}>
-                       <LucideShare2 size={20} />
-                     </button>
-                  </div>
+                 <div className="space-y-6">
+                     {MOCK_POSTS.map(post => (
+                         <div key={post.id} className={`p-6 rounded-2xl border ${theme === 'dark' ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100 shadow-sm'}`}>
+                             <div className="flex items-center justify-between mb-4">
+                                 <div className="flex items-center gap-3">
+                                     <img src={post.authorAvatar} className="w-10 h-10 rounded-full bg-gray-200" alt="author"/>
+                                     <div>
+                                         <p className="font-bold text-sm">{post.author}</p>
+                                         <p className="text-xs opacity-60">{post.role} • {post.timestamp}</p>
+                                     </div>
+                                 </div>
+                                 <button><LucideMoreVertical size={16} className="opacity-40"/></button>
+                             </div>
+                             <h3 className="font-bold text-xl mb-2">{post.title}</h3>
+                             <p className="opacity-80 leading-relaxed mb-4">{post.content}</p>
+                             {post.image && (
+                                 <div className="mb-4 rounded-xl overflow-hidden">
+                                     <LazyImage src={post.image} alt="post content" className="w-full h-64"/>
+                                 </div>
+                             )}
+                             <div className="flex items-center gap-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                 <button className="flex items-center gap-2 text-sm font-bold opacity-60 hover:text-green-500 hover:opacity-100 transition-colors">
+                                     <LucideThumbsUp size={18}/> {post.likes}
+                                 </button>
+                                 <button className="flex items-center gap-2 text-sm font-bold opacity-60 hover:text-blue-500 hover:opacity-100 transition-colors">
+                                     <LucideMessageCircle size={18}/> {post.comments.length}
+                                 </button>
+                                 <button className="flex items-center gap-2 text-sm font-bold opacity-60 hover:text-gray-900 dark:hover:text-white hover:opacity-100 transition-colors ml-auto">
+                                     <LucideShare2 size={18}/> Share
+                                 </button>
+                             </div>
+                         </div>
+                     ))}
+                 </div>
+             </div>
+        )}
+
+        {activeTab === 'ai' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center justify-center min-h-[60vh] text-center max-w-2xl mx-auto">
+                <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-3xl rotate-3 flex items-center justify-center mb-8 shadow-2xl shadow-green-500/30">
+                    <LucideLeaf className="text-white w-12 h-12" />
                 </div>
-                
-                <p className={`mt-4 max-w-2xl leading-relaxed ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                  {user.bio}
+                <h2 className="text-4xl md:text-5xl font-serif font-black mb-4 tracking-tight">{t.ai_welcome[lang]}</h2>
+                <p className="text-lg opacity-70 mb-10 leading-relaxed">
+                    {lang === 'EN' 
+                        ? "Get real-time advice on crops, disease control, and market trends powered by Gemini 3.0. Or switch to Voice Mode for hands-free assistance."
+                        : "Samu shawarwari kan amfanin gona, maganin cututtuka, da yanayin kasuwa tare da Gemini 3.0. Ko yi amfani da Murya don taimako."}
                 </p>
-
-                <div className="flex flex-wrap gap-4 mt-6 text-sm font-medium">
-                   <span className={`flex items-center gap-2 px-3 py-1 rounded-full border ${badge.bg}`}>
-                       {badge.icon} {badge.label}
-                   </span>
-                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/10 opacity-80"><LucideMapPin size={14} className="text-red-500"/> {user.location}</span>
-                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/10 opacity-80"><LucideClock size={14} className="text-yellow-500"/> Joined {user.joinedDate}</span>
-                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/10 opacity-80"><LucideUsers size={14} className="text-purple-500"/> {user.followers?.toLocaleString()} Followers</span>
+                
+                <div className="flex flex-col md:flex-row gap-4 w-full max-w-md">
+                     <button 
+                        onClick={() => setShowLiveExpert(true)}
+                        className="flex-1 bg-black text-white dark:bg-white dark:text-black py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:scale-105 transition-transform"
+                     >
+                        <LucideMic /> {t.ai_voice_mode[lang]}
+                     </button>
+                     <button className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        <LucideMessageCircle /> Text Chat
+                     </button>
                 </div>
-             </div>
-          </div>
-        </div>
-      </div>
+            </div>
+        )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className={`p-6 rounded-2xl flex flex-col items-center text-center gap-2 group hover:-translate-y-1 transition-transform duration-300 ${theme === 'dark' ? 'bg-gray-800 border border-white/5' : 'bg-white border border-gray-100 shadow-sm'}`}>
-              <div className="p-3 bg-green-500/10 text-green-500 rounded-xl mb-1 group-hover:scale-110 transition-transform">
-                 <LucideTrendingUp size={24} />
-              </div>
-              <span className={`text-2xl font-black font-serif ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                ₦{(user.stats.totalEarnings / 1000000).toFixed(1)}M
-              </span>
-              <span className="text-xs uppercase tracking-wider opacity-60 font-bold">{t.stats_earnings[lang]}</span>
-          </div>
-          
-          <div className={`p-6 rounded-2xl flex flex-col items-center text-center gap-2 group hover:-translate-y-1 transition-transform duration-300 ${theme === 'dark' ? 'bg-gray-800 border border-white/5' : 'bg-white border border-gray-100 shadow-sm'}`}>
-              <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl mb-1 group-hover:scale-110 transition-transform">
-                 <LucideShoppingBag size={24} />
-              </div>
-              <span className={`text-2xl font-black font-serif ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                {user.stats.itemsSold}
-              </span>
-              <span className="text-xs uppercase tracking-wider opacity-60 font-bold">{t.stats_sold[lang]}</span>
-          </div>
+        {/* Fallback for other tabs */}
+        {['tools', 'donate', 'profile', 'settings', 'messages'].includes(activeTab) && (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] opacity-50 animate-pulse">
+                <LucideLoader2 className="animate-spin mb-4" size={32} />
+                <p className="font-bold">Loading module...</p>
+            </div>
+        )}
+      </main>
 
-          <div className={`p-6 rounded-2xl flex flex-col items-center text-center gap-2 group hover:-translate-y-1 transition-transform duration-300 ${theme === 'dark' ? 'bg-gray-800 border border-white/5' : 'bg-white border border-gray-100 shadow-sm'}`}>
-              <div className="p-3 bg-yellow-500/10 text-yellow-500 rounded-xl mb-1 group-hover:scale-110 transition-transform">
-                 <LucidePackage size={24} />
-              </div>
-              <span className={`text-2xl font-black font-serif ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                {user.stats.activeListings}
-              </span>
-              <span className="text-xs uppercase tracking-wider opacity-60 font-bold">{t.stats_active[lang]}</span>
-          </div>
-
-          <div className={`p-6 rounded-2xl flex flex-col items-center text-center gap-2 group hover:-translate-y-1 transition-transform duration-300 ${theme === 'dark' ? 'bg-gray-800 border border-white/5' : 'bg-white border border-gray-100 shadow-sm'}`}>
-              <div className="p-3 bg-purple-500/10 text-purple-500 rounded-xl mb-1 group-hover:scale-110 transition-transform">
-                 <LucideClock size={24} />
-              </div>
-              <span className={`text-2xl font-black font-serif ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                {user.stats.pendingOrders}
-              </span>
-              <span className="text-xs uppercase tracking-wider opacity-60 font-bold">{t.stats_pending ? t.stats_pending[lang] : 'Pending Orders'}</span>
-          </div>
-      </div>
-      
-      <div className={`p-6 rounded-3xl ${theme === 'dark' ? 'bg-gray-800 border border-white/5' : 'bg-white border border-gray-100 shadow-sm'}`}>
-         <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Recent Activity</h3>
-         <div className="flex flex-col items-center justify-center py-8 text-gray-500">
-             <LucideLeaf size={48} className="mb-2 opacity-20" />
-             <p>No recent activity to show.</p>
-         </div>
-      </div>
+      {showLiveExpert && <LiveExpert onClose={() => setShowLiveExpert(false)} language={lang} />}
     </div>
   );
-};
-
-// Main App Component
-const App = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [showAuthModal, setShowAuthModal] = useState(false);
-    const [lang, setLang] = useState<Language>('EN');
-    const [theme, setTheme] = useState<Theme>('dark');
-    const [activeTab, setActiveTab] = useState('market');
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    
-    // Connectivity State
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-    // Navigation State
-    const [selectedChatId, setSelectedChatId] = useState<string | undefined>(undefined);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [viewingProfileId, setViewingProfileId] = useState<string | undefined>(undefined);
-
-    const handleNavigate = (tab: string, params?: any) => {
-        setActiveTab(tab);
-        if (tab === 'messages' && params?.chatId) {
-            setSelectedChatId(params.chatId);
-        } else if (tab === 'messages') {
-            setSelectedChatId(undefined); // Reset if just clicking 'Messages' general link
-        }
-        
-        if (tab === 'profile' && params?.userId) {
-            setViewingProfileId(params.userId);
-        }
-    };
-
-    useEffect(() => {
-        const handleOnline = () => setIsOnline(true);
-        const handleOffline = () => setIsOnline(false);
-
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
-        return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        };
-    }, []);
-
-    if (!isAuthenticated) {
-        return (
-            <>
-                <AuthPage 
-                    onLogin={() => setIsAuthenticated(true)} 
-                    onGoogleClick={() => setShowAuthModal(true)} 
-                />
-                {showAuthModal && (
-                    <GoogleAuthModal 
-                        onComplete={() => { setShowAuthModal(false); setIsAuthenticated(true); }} 
-                        onClose={() => setShowAuthModal(false)} 
-                    />
-                )}
-            </>
-        );
-    }
-
-    return (
-        <div className={`min-h-screen transition-colors duration-300 font-sans ${theme === 'dark' ? 'bg-[#0a0a0a] text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
-            <Navbar 
-                lang={lang} 
-                setLang={setLang} 
-                activeTab={activeTab} 
-                setActiveTab={setActiveTab} 
-                mobileMenuOpen={mobileMenuOpen} 
-                setMobileMenuOpen={setMobileMenuOpen}
-                theme={theme}
-                onNavigate={handleNavigate}
-            />
-            
-            {!isOnline && (
-                <div className="fixed top-[70px] left-0 right-0 z-30 bg-yellow-500 text-black text-center py-1 text-sm font-bold flex items-center justify-center gap-2">
-                    <LucideWifiOff size={14} /> {TRANSLATIONS.offline_mode[lang]}
-                </div>
-            )}
-
-            <main className="pt-24 pb-24 px-4 max-w-7xl mx-auto min-h-screen">
-                {activeTab === 'market' && <Marketplace lang={lang} theme={theme} />}
-                {activeTab === 'forum' && <Forum lang={lang} theme={theme} />}
-                {activeTab === 'ai' && <AIGuide lang={lang} theme={theme} />}
-                {activeTab === 'settings' && <Settings lang={lang} theme={theme} />}
-                {activeTab === 'messages' && <Messages theme={theme} lang={lang} selectedChatId={selectedChatId} />}
-                {activeTab === 'profile' && <Profile user={MOCK_USER} theme={theme} lang={lang} />}
-                
-                {/* Placeholders for other tabs */}
-                {(activeTab === 'tools' || activeTab === 'donate') && (
-                    <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
-                        <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center text-green-500">
-                             {activeTab === 'tools' && <LucideImage size={40} />}
-                             {activeTab === 'donate' && <LucideHeart size={40} />}
-                        </div>
-                        <h2 className="text-2xl font-bold font-serif capitalize">{activeTab}</h2>
-                        <p className="text-gray-500 max-w-md">This section is currently under development. Check back soon for updates!</p>
-                    </div>
-                )}
-            </main>
-        </div>
-    );
 };
 
 export default App;
