@@ -9,7 +9,8 @@ import {
   LucideTrendingUp, LucidePackage, LucideClock, LucideType, LucideMail, 
   LucidePhone, LucidePlus, LucideThumbsUp, LucideUserPlus, LucideMoreVertical,
   LucideArrowRight, LucideLock, LucideCheck, LucideFileText, LucideBell, LucideMic,
-  LucideKey, LucideEdit, LucideSave, LucideTrash2, LucideAlertTriangle
+  LucideKey, LucideEdit, LucideSave, LucideTrash2, LucideAlertTriangle,
+  LucideBadgeCheck, LucideTruck, LucideCrown, LucideWifiOff, LucideAward
 } from 'lucide-react';
 import { NIGERIAN_STATES, TRANSLATIONS, MOCK_PRODUCTS, MOCK_POSTS, CRYPTO_ADDRESSES, MOCK_USER, MOCK_GROUPS } from './constants';
 import { Language, Product, ForumPost, ChatMessage, AppSettings, UserProfile, Theme, ForumGroup, Comment } from './types';
@@ -22,6 +23,13 @@ const speakText = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
     window.speechSynthesis.speak(utterance);
   }
+};
+
+const calculateDaysLeft = (expiryDate?: string) => {
+    if (!expiryDate) return null;
+    const diff = new Date(expiryDate).getTime() - new Date().getTime();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days;
 };
 
 // --- Authentication Components ---
@@ -572,13 +580,36 @@ const Navbar = ({ lang, setLang, activeTab, setActiveTab, mobileMenuOpen, setMob
 
 // 2. Marketplace Components
 const ProductCard = ({ product, lang, onClick, theme }: any) => {
+  const daysLeft = calculateDaysLeft(product.expiryDate);
+  // Mock distance for demo purposes
+  const distance = Math.floor(Math.random() * 500) + 10; 
+  const shippingCost = distance * 50; // Mock calculation
+
+  const [showEscrow, setShowEscrow] = useState(false);
+
   return (
     <div 
-      onClick={onClick} 
-      className="group relative glass-panel rounded-3xl overflow-hidden hover:scale-[1.02] transition-all duration-500 cursor-pointer nature-shadow border-0 ring-1 ring-white/10 hover:ring-green-500/50 flex flex-col h-full"
+      className="group relative glass-panel rounded-3xl overflow-hidden hover:scale-[1.02] transition-all duration-500 nature-shadow border-0 ring-1 ring-white/10 hover:ring-green-500/50 flex flex-col h-full"
     >
+      {/* Escrow Modal */}
+      {showEscrow && (
+          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in">
+              <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
+                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <LucideShieldCheck size={32}/>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Secure Escrow</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                      Your payment of <span className="font-bold">₦{product.price.toLocaleString()}</span> will be held safely until you confirm delivery.
+                  </p>
+                  <button onClick={() => setShowEscrow(false)} className="w-full bg-green-600 text-white font-bold py-3 rounded-xl mb-2">Proceed to Payment</button>
+                  <button onClick={() => setShowEscrow(false)} className="text-gray-500 text-sm">Cancel</button>
+              </div>
+          </div>
+      )}
+
       {/* Image Section */}
-      <div className="h-64 overflow-hidden relative">
+      <div className="h-64 overflow-hidden relative cursor-pointer" onClick={onClick}>
         <LazyImage 
           src={product.image} 
           alt={product.name} 
@@ -595,6 +626,15 @@ const ProductCard = ({ product, lang, onClick, theme }: any) => {
                 {product.type === 'buy' ? 'Request' : product.category}
              </span>
         </div>
+
+        {/* Expiry Badge */}
+        {daysLeft !== null && daysLeft <= 5 && (
+            <div className="absolute top-4 left-4">
+                 <span className="text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide backdrop-blur-md shadow-lg bg-red-600/90 text-white flex items-center gap-1">
+                    <LucideClock size={12}/> Expires in {daysLeft}d
+                 </span>
+            </div>
+        )}
 
         {/* Quick View Button (Visible on Hover) */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px]">
@@ -626,8 +666,8 @@ const ProductCard = ({ product, lang, onClick, theme }: any) => {
                 <span className="truncate">{product.location}</span>
             </div>
             <div className="flex items-center gap-2">
-                <LucideClock size={14} className="text-yellow-500 shrink-0" />
-                <span className="truncate">{product.datePosted}</span>
+                <LucideTruck size={14} className="text-blue-500 shrink-0" />
+                <span className="truncate">~{distance}km (₦{shippingCost.toLocaleString()})</span>
             </div>
         </div>
 
@@ -637,18 +677,30 @@ const ProductCard = ({ product, lang, onClick, theme }: any) => {
         {/* Seller Info & CTA */}
         <div className="flex justify-between items-center mt-auto pt-1">
              <div className="flex items-center gap-3">
-                 <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden ring-2 ring-white/20">
+                 <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden ring-2 ring-white/20 relative">
                     <img src={`https://ui-avatars.com/api/?name=${product.sellerName}&background=random`} alt="seller" className="w-full h-full object-cover"/>
                  </div>
                  <div className="flex flex-col">
-                     <span className="text-xs font-bold leading-none">{product.sellerName.split(' ')[0]}</span>
-                     <span className="text-[10px] opacity-60">Verified Seller</span>
+                     <div className="flex items-center gap-1">
+                         <span className="text-xs font-bold leading-none">{product.sellerName.split(' ')[0]}</span>
+                         {product.sellerTier >= 2 && <LucideBadgeCheck size={12} className="text-blue-500"/>}
+                     </div>
+                     <span className="text-[10px] opacity-60">
+                         {product.sellerTier === 3 ? 'Cooperative' : product.sellerTier === 2 ? 'Verified' : 'Basic'}
+                     </span>
                  </div>
              </div>
              
-             <button className={`p-2.5 rounded-xl transition-colors ${theme === 'light' ? 'bg-gray-100 hover:bg-green-100 text-green-700' : 'bg-white/5 hover:bg-green-600 hover:text-white text-gray-400'}`}>
-                 <LucideMessageCircle size={20} />
-             </button>
+             <div className="flex gap-2">
+                <button 
+                    onClick={() => setShowEscrow(true)}
+                    className={`p-2.5 rounded-xl transition-colors ${theme === 'light' ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-green-600/20 hover:bg-green-600 hover:text-white text-green-400'}`} title="Buy with Escrow">
+                    <LucideShieldCheck size={20} />
+                </button>
+                <button className={`p-2.5 rounded-xl transition-colors ${theme === 'light' ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' : 'bg-white/5 hover:bg-white/20 text-gray-400'}`} title="Chat">
+                    <LucideMessageCircle size={20} />
+                </button>
+             </div>
         </div>
       </div>
     </div>
@@ -707,16 +759,40 @@ const Marketplace = ({ lang, theme }: { lang: Language, theme: Theme }) => {
 
 // 4. Forum Component
 const Forum = ({ lang, theme }: { lang: Language, theme: Theme }) => {
+    const [regionFilter, setRegionFilter] = useState<'All' | 'My State'>('All');
+    
+    // Simulate current user location state for filtering
+    const userState = MOCK_USER.location; 
+
+    const filteredGroups = MOCK_GROUPS.filter(g => 
+        regionFilter === 'All' ? true : g.region === userState || g.region === 'National'
+    );
+
     return (
         <div className="space-y-6">
+            <div className="flex gap-2 mb-4">
+                 <button 
+                    onClick={() => setRegionFilter('All')}
+                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${regionFilter === 'All' ? 'bg-green-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                 >
+                     All Groups
+                 </button>
+                 <button 
+                    onClick={() => setRegionFilter('My State')}
+                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${regionFilter === 'My State' ? 'bg-green-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                 >
+                     My State ({userState})
+                 </button>
+            </div>
+
             <div className="flex gap-4 overflow-x-auto pb-4">
-                {MOCK_GROUPS.map(group => (
+                {filteredGroups.map(group => (
                     <div key={group.id} className={`min-w-[280px] p-4 rounded-2xl flex items-center gap-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white border border-gray-200'}`}>
                         <img src={group.image} alt={group.name} className="w-16 h-16 rounded-xl object-cover" />
                         <div>
                             <h4 className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{group.name}</h4>
                             <p className="text-xs text-gray-500">{group.members.toLocaleString()} members</p>
-                            <button className="mt-2 text-xs font-bold text-green-500">Join Group</button>
+                            <span className="text-[10px] bg-gray-500/10 px-2 py-0.5 rounded text-gray-500">{group.region || 'General'}</span>
                         </div>
                     </div>
                 ))}
@@ -762,6 +838,9 @@ const AIGuide = ({ lang, theme }: { lang: Language, theme: Theme }) => {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [showLive, setShowLive] = useState(false);
+    const [isPro, setIsPro] = useState(false); // Simulated state
+    const [showProModal, setShowProModal] = useState(false);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -774,6 +853,14 @@ const AIGuide = ({ lang, theme }: { lang: Language, theme: Theme }) => {
 
     const handleSend = async () => {
         if (!input.trim()) return;
+
+        // Simple mock trigger for "advanced" queries
+        if (input.toLowerCase().includes('disease') || input.toLowerCase().includes('diagnosis')) {
+            if (!isPro) {
+                setShowProModal(true);
+                return;
+            }
+        }
         
         const userMsg = input;
         setInput('');
@@ -791,8 +878,26 @@ const AIGuide = ({ lang, theme }: { lang: Language, theme: Theme }) => {
     };
 
     return (
-        <div className={`h-[calc(100vh-140px)] flex flex-col rounded-3xl overflow-hidden border ${theme === 'dark' ? 'bg-gray-800/50 border-white/5' : 'bg-white border-gray-200 shadow-xl'}`}>
+        <div className={`h-[calc(100vh-140px)] flex flex-col rounded-3xl overflow-hidden border relative ${theme === 'dark' ? 'bg-gray-800/50 border-white/5' : 'bg-white border-gray-200 shadow-xl'}`}>
              {showLive && <LiveExpert onClose={() => setShowLive(false)} language={lang} />}
+
+             {/* Pro Upgrade Modal */}
+             {showProModal && (
+                 <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in">
+                     <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center relative overflow-hidden">
+                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 to-yellow-600"></div>
+                         <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                             <LucideCrown size={32} fill="currentColor"/>
+                         </div>
+                         <h3 className="text-2xl font-black text-gray-900 mb-2">Upgrade to AgroPro</h3>
+                         <p className="text-gray-600 mb-6">Unlock advanced disease diagnosis, personalized feed formulas, and priority market insights.</p>
+                         <button onClick={() => { setIsPro(true); setShowProModal(false); }} className="w-full bg-black text-white font-bold py-4 rounded-xl mb-3 shadow-lg hover:scale-[1.02] transition-transform">
+                             Get Pro - ₦1,500/mo
+                         </button>
+                         <button onClick={() => setShowProModal(false)} className="text-gray-500 font-bold text-sm">Maybe Later</button>
+                     </div>
+                 </div>
+             )}
              
              <div className="p-4 border-b border-gray-500/10 flex justify-between items-center bg-green-600 text-white">
                  <div className="flex items-center gap-3">
@@ -800,16 +905,23 @@ const AIGuide = ({ lang, theme }: { lang: Language, theme: Theme }) => {
                          <LucideLeaf size={20} />
                      </div>
                      <div>
-                         <h3 className="font-bold">Agro AI Assistant</h3>
+                         <h3 className="font-bold flex items-center gap-2">Agro AI {isPro && <span className="bg-yellow-400 text-black text-[10px] px-1.5 rounded uppercase font-black">Pro</span>}</h3>
                          <p className="text-xs opacity-80">Powered by Gemini 3.0</p>
                      </div>
                  </div>
-                 <button 
-                    onClick={() => setShowLive(true)}
-                    className="flex items-center gap-2 bg-white text-green-700 px-4 py-2 rounded-full font-bold text-sm shadow-lg animate-pulse hover:animate-none hover:scale-105 transition-transform"
-                 >
-                     <LucideMic size={16} /> Live Voice
-                 </button>
+                 <div className="flex gap-2">
+                    {!isPro && (
+                        <button onClick={() => setShowProModal(true)} className="flex items-center gap-1 bg-black/20 hover:bg-black/30 text-white px-3 py-1.5 rounded-full text-xs font-bold transition-colors">
+                            <LucideCrown size={14} /> Upgrade
+                        </button>
+                    )}
+                    <button 
+                        onClick={() => setShowLive(true)}
+                        className="flex items-center gap-2 bg-white text-green-700 px-4 py-2 rounded-full font-bold text-sm shadow-lg animate-pulse hover:animate-none hover:scale-105 transition-transform"
+                    >
+                        <LucideMic size={16} /> Voice
+                    </button>
+                 </div>
              </div>
 
              <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -841,7 +953,7 @@ const AIGuide = ({ lang, theme }: { lang: Language, theme: Theme }) => {
                         value={input}
                         onChange={e => setInput(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleSend()}
-                        placeholder="Ask about crops, livestock, or prices..."
+                        placeholder="Ask about crops, diagnosis, prices..."
                         className={`flex-1 p-3 rounded-xl pr-12 outline-none border transition-colors ${theme === 'dark' ? 'bg-gray-800 border-gray-700 focus:border-green-500 text-white' : 'bg-white border-gray-200 focus:border-green-500 text-gray-900'}`}
                      />
                      <button 
@@ -1133,6 +1245,20 @@ const Messages = ({ selectedChatId, theme, lang }: { selectedChatId?: string, th
 const Profile = ({ user, theme, lang }: { user: UserProfile, theme: Theme, lang: Language }) => {
   const t = TRANSLATIONS;
 
+  // Verification Badge Logic
+  const getVerificationBadge = () => {
+    switch (user.verificationTier) {
+        case 3:
+            return { icon: <LucideCrown size={16} fill="currentColor" className="text-yellow-500"/>, label: 'Cooperative Member', bg: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' };
+        case 2:
+            return { icon: <LucideBadgeCheck size={16} fill="currentColor" className="text-blue-500 text-white"/>, label: 'Verified Farmer', bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' };
+        default:
+            return { icon: <LucideCheckCircle size={16} />, label: 'Basic Verification', bg: 'bg-gray-500/10 text-gray-500 border-gray-500/20' };
+    }
+  };
+
+  const badge = getVerificationBadge();
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header Card */}
@@ -1150,7 +1276,7 @@ const Profile = ({ user, theme, lang }: { user: UserProfile, theme: Theme, lang:
                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                </div>
                {user.isVerified && (
-                 <div className="absolute bottom-2 right-2 bg-blue-500 text-white p-1 rounded-full border-4 border-white dark:border-gray-800" title="Verified Expert">
+                 <div className="absolute bottom-2 right-2 bg-blue-500 text-white p-1 rounded-full border-4 border-white dark:border-gray-800 shadow-lg" title="Verified">
                    <LucideCheck size={16} strokeWidth={4} />
                  </div>
                )}
@@ -1178,11 +1304,13 @@ const Profile = ({ user, theme, lang }: { user: UserProfile, theme: Theme, lang:
                   {user.bio}
                 </p>
 
-                <div className="flex flex-wrap gap-4 mt-6 text-sm font-medium opacity-80">
-                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/10"><LucideMapPin size={14} className="text-red-500"/> {user.location}</span>
-                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/10"><LucideClock size={14} className="text-yellow-500"/> Joined {user.joinedDate}</span>
-                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/10"><LucideShieldCheck size={14} className="text-blue-500"/> {user.role}</span>
-                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/10"><LucideUsers size={14} className="text-purple-500"/> {user.followers?.toLocaleString()} Followers</span>
+                <div className="flex flex-wrap gap-4 mt-6 text-sm font-medium">
+                   <span className={`flex items-center gap-2 px-3 py-1 rounded-full border ${badge.bg}`}>
+                       {badge.icon} {badge.label}
+                   </span>
+                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/10 opacity-80"><LucideMapPin size={14} className="text-red-500"/> {user.location}</span>
+                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/10 opacity-80"><LucideClock size={14} className="text-yellow-500"/> Joined {user.joinedDate}</span>
+                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-500/10 opacity-80"><LucideUsers size={14} className="text-purple-500"/> {user.followers?.toLocaleString()} Followers</span>
                 </div>
              </div>
           </div>
@@ -1221,7 +1349,7 @@ const Profile = ({ user, theme, lang }: { user: UserProfile, theme: Theme, lang:
               <span className="text-xs uppercase tracking-wider opacity-60 font-bold">{t.stats_active[lang]}</span>
           </div>
 
-          <div className={`p-6 rounded-2xl flex flex-col items-center text-center gap-2 group hover:-translate-y-1 transition-transform duration-300 ${theme === 'dark' ? 'bg-gray-800 border border-white/5' : 'bg-white border-gray-100 shadow-sm'}`}>
+          <div className={`p-6 rounded-2xl flex flex-col items-center text-center gap-2 group hover:-translate-y-1 transition-transform duration-300 ${theme === 'dark' ? 'bg-gray-800 border border-white/5' : 'bg-white border border-gray-100 shadow-sm'}`}>
               <div className="p-3 bg-purple-500/10 text-purple-500 rounded-xl mb-1 group-hover:scale-110 transition-transform">
                  <LucideClock size={24} />
               </div>
@@ -1252,6 +1380,9 @@ const App = () => {
     const [activeTab, setActiveTab] = useState('market');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     
+    // Connectivity State
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+
     // Navigation State
     const [selectedChatId, setSelectedChatId] = useState<string | undefined>(undefined);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1270,9 +1401,17 @@ const App = () => {
         }
     };
 
-    // Initial check (mock)
     useEffect(() => {
-        // In a real app, check session/local storage
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
     }, []);
 
     if (!isAuthenticated) {
@@ -1304,6 +1443,12 @@ const App = () => {
                 theme={theme}
                 onNavigate={handleNavigate}
             />
+            
+            {!isOnline && (
+                <div className="fixed top-[70px] left-0 right-0 z-30 bg-yellow-500 text-black text-center py-1 text-sm font-bold flex items-center justify-center gap-2">
+                    <LucideWifiOff size={14} /> {TRANSLATIONS.offline_mode[lang]}
+                </div>
+            )}
 
             <main className="pt-24 pb-24 px-4 max-w-7xl mx-auto min-h-screen">
                 {activeTab === 'market' && <Marketplace lang={lang} theme={theme} />}

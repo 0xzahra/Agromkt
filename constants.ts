@@ -28,6 +28,7 @@ export const TRANSLATIONS: Translation = {
   
   btn_buy: { EN: "Contact Seller", HA: "Tuntubi Mai Sayarwa" },
   btn_sell: { EN: "I have this", HA: "Ina da wannan" },
+  btn_escrow: { EN: "Buy with Escrow", HA: "Saya da Escrow" },
   
   hero_title: { EN: "Premium Nigerian Agriculture", HA: "Noman Zamani a Najeriya" },
   hero_subtitle: { EN: "Connecting farmers, buyers, and experts.", HA: "Hada manoma, masu saye, da kwararru." },
@@ -35,6 +36,7 @@ export const TRANSLATIONS: Translation = {
   ai_welcome: { EN: "Ask me anything about farming.", HA: "Tambaye ni komai game da noma." },
   ai_thinking: { EN: "Thinking...", HA: "Ina tunani..." },
   ai_voice_mode: { EN: "Live Voice Mode", HA: "Yanayin Murya" },
+  ai_pro_feature: { EN: "Upgrade to Pro for advanced disease diagnosis.", HA: "Haɓaka zuwa Pro don gano cututtuka." },
   
   copyright: { EN: "© 2026 Agromarket. Vibe coded by Zahra Usman.", HA: "© 2026 Agromarket. Zahra Usman ce ta tsara shi." },
   
@@ -51,7 +53,9 @@ export const TRANSLATIONS: Translation = {
   
   setting_font_size: { EN: "Font Size", HA: "Girman Rubutu" },
   footer_quick_links: { EN: "Quick Links", HA: "Hanyoyin Sauri" },
-  footer_contact: { EN: "Contact Us", HA: "Tuntube Mu" }
+  footer_contact: { EN: "Contact Us", HA: "Tuntube Mu" },
+
+  offline_mode: { EN: "You are offline. Viewing cached data.", HA: "Ba ku da yanar gizo. Kuna ganin bayanan da aka adana." }
 };
 
 export const MOCK_USER: UserProfile = {
@@ -60,8 +64,10 @@ export const MOCK_USER: UserProfile = {
   handle: '@zahra_farms',
   bio: 'Passionate poultry farmer and tech enthusiast. Creating solutions for the Arewa agricultural community.',
   avatar: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=200&auto=format&fit=crop',
-  location: 'Kano, Nigeria',
+  location: 'Kano',
   isVerified: true,
+  verificationTier: 2, // Tier 2 Verified
+  subscription: 'Free',
   role: 'Expert',
   socials: {
     twitter: 'twitter.com/zahra',
@@ -86,7 +92,8 @@ export const MOCK_GROUPS: ForumGroup[] = [
     description: 'The #1 community for broiler and layer farmers.',
     image: 'https://images.unsplash.com/photo-1563721345-f09dfd2d3869?q=80&w=400&auto=format&fit=crop',
     members: 15420,
-    isJoined: true
+    isJoined: true,
+    region: 'National'
   },
   {
     id: 'g2',
@@ -94,7 +101,8 @@ export const MOCK_GROUPS: ForumGroup[] = [
     description: 'Connect with local farmers in Kano state.',
     image: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=400&auto=format&fit=crop',
     members: 8200,
-    isJoined: false
+    isJoined: false,
+    region: 'Kano'
   },
   {
     id: 'g3',
@@ -102,7 +110,8 @@ export const MOCK_GROUPS: ForumGroup[] = [
     description: 'Catfish and Tilapia farming guides and discussions.',
     image: 'https://images.unsplash.com/photo-1516684669134-de6d7c47743b?q=80&w=400&auto=format&fit=crop',
     members: 5300,
-    isJoined: false
+    isJoined: false,
+    region: 'National'
   }
 ];
 
@@ -156,10 +165,12 @@ export const MOCK_PRODUCTS: Product[] = [
     sellerId: 's1',
     sellerName: 'Ibadan Farms Ltd',
     sellerPhone: '2348000000001',
+    sellerTier: 3,
     image: 'https://images.unsplash.com/photo-1544558509-f6230f2c4193?q=80&w=800&auto=format&fit=crop',
     video: 'https://cdn.pixabay.com/video/2022/11/27/140733-775791410_large.mp4',
     description: 'High quality Arbor Acres broilers. Vaccinated against Newcastle and Gumboro. Ideal for 6-week maturity cycle.',
-    datePosted: '2 days ago'
+    datePosted: '2 days ago',
+    expiryDate: '2024-12-20' // Soon
   },
   {
     id: '2',
@@ -171,6 +182,7 @@ export const MOCK_PRODUCTS: Product[] = [
     sellerId: 's2',
     sellerName: 'Lagoon Fishery',
     sellerPhone: '2348000000002',
+    sellerTier: 2,
     image: 'https://images.unsplash.com/photo-1516684669134-de6d7c47743b?q=80&w=800&auto=format&fit=crop',
     description: 'Fast growing Clarias species. 5 weeks old, hardy and disease resistant. Minimum order 1000 pieces.',
     datePosted: '1 week ago'
@@ -185,9 +197,11 @@ export const MOCK_PRODUCTS: Product[] = [
     sellerId: 's3',
     sellerName: 'Arewa Feeds',
     sellerPhone: '2348000000003',
+    sellerTier: 3,
     image: 'https://images.unsplash.com/photo-1605000797499-95a51c5269ae?q=80&w=800&auto=format&fit=crop',
     description: 'Balanced diet for optimal egg production. Contains high calcium and protein content specifically for layers.',
-    datePosted: '3 hours ago'
+    datePosted: '3 hours ago',
+    expiryDate: '2025-01-10'
   },
   {
     id: '4',
@@ -199,6 +213,7 @@ export const MOCK_PRODUCTS: Product[] = [
     sellerId: 'b1',
     sellerName: 'Capital Poultry',
     sellerPhone: '2348000000004',
+    sellerTier: 1,
     image: 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?q=80&w=800&auto=format&fit=crop',
     description: 'Urgent request for 500 bags of dry white maize. Must be clean and free from weevils. Payment on delivery.',
     datePosted: 'Just now'
@@ -213,9 +228,11 @@ export const MOCK_PRODUCTS: Product[] = [
     sellerId: 'b1',
     sellerName: 'Capital Poultry',
     sellerPhone: '2348000000004',
+    sellerTier: 2,
     image: 'https://images.unsplash.com/photo-1563721345-f09dfd2d3869?q=80&w=800&auto=format&fit=crop',
     description: 'Organic free-range turkeys available for festive season. Average weight 8kg.',
-    datePosted: '5 days ago'
+    datePosted: '5 days ago',
+    expiryDate: '2024-12-24'
   },
   {
     id: '6',
@@ -227,6 +244,7 @@ export const MOCK_PRODUCTS: Product[] = [
     sellerId: 's4',
     sellerName: 'Green Earth',
     sellerPhone: '2348000000005',
+    sellerTier: 1,
     image: 'https://images.unsplash.com/photo-1628352081506-83c43123ed6d?q=80&w=800&auto=format&fit=crop',
     description: 'Rich organic manure for crop farming. Sold in 50kg bags.',
     datePosted: '1 day ago'
