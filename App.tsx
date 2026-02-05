@@ -790,17 +790,26 @@ const Marketplace = ({ lang, theme, onNavigate }: { lang: Language, theme: Theme
   const [filter, setFilter] = useState('All');
   const [marketMode, setMarketMode] = useState<'sell' | 'buy'>('sell'); // 'sell' = For Sale (Sellers), 'buy' = Requests (Buyers)
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
   // Local state for products to allow adding new ones
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [showCreateModal, setShowCreateModal] = useState(false);
   
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
   // Refined filtering logic
   const filtered = products.filter(p => 
     (filter === 'All' || p.category === filter) &&
     (p.type === marketMode) && // Filter by Buy/Sell mode
-    (p.name.toLowerCase().includes(search.toLowerCase()) || p.location.toLowerCase().includes(search.toLowerCase()))
+    (p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || p.location.toLowerCase().includes(debouncedSearch.toLowerCase()))
   );
 
   const handleAddProduct = (newProduct: Product) => {
@@ -837,10 +846,18 @@ const Marketplace = ({ lang, theme, onNavigate }: { lang: Language, theme: Theme
                 <input 
                     type="text" 
                     placeholder={marketMode === 'sell' ? "Search products..." : "Search buyer requests..."}
-                    className={`w-full pl-11 pr-4 py-3 rounded-xl outline-none border transition-all ${theme === 'dark' ? 'bg-gray-900 border-gray-800 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'}`}
+                    className={`w-full pl-11 pr-10 py-3 rounded-xl outline-none border transition-all ${theme === 'dark' ? 'bg-gray-900 border-gray-800 text-white focus:border-green-500' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-green-500'}`}
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                 />
+                {search && (
+                    <button 
+                        onClick={() => setSearch('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    >
+                        <LucideX size={16} />
+                    </button>
+                )}
             </div>
             
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0">
