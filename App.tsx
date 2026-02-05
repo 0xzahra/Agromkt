@@ -91,7 +91,7 @@ const IntroScreen = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
-// ... (rest of the file remains unchanged, starting from TourOverlay) ...
+// --- Tour Component ---
 const TourOverlay = ({ onClose }: { onClose: () => void }) => {
   const [step, setStep] = useState(0);
   const totalSteps = 4;
@@ -358,9 +358,6 @@ const Navbar = ({ lang, setLang, activeTab, setActiveTab, mobileMenuOpen, setMob
         <div className="flex items-center gap-2 flex-1 overflow-x-auto no-scrollbar">
              {/* Logo + Title */}
             <div className="flex items-center gap-2 cursor-pointer shrink-0 mr-2 md:mr-6" onClick={() => handleNav('market')}>
-                <div className="bg-gradient-to-br from-green-500 to-green-700 p-1.5 rounded-lg shadow-lg">
-                    <LucideLeaf className="text-white" size={18} />
-                </div>
                 <h1 className={`text-lg md:text-xl font-serif font-black tracking-wide hidden min-[360px]:block ${theme === 'dark' ? 'text-white' : 'text-green-900'}`}>
                     Agromkt
                 </h1>
