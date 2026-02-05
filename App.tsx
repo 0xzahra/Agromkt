@@ -11,7 +11,8 @@ import {
   LucideArrowRight, LucideLock, LucideCheck, LucideFileText, LucideBell, LucideMic,
   LucideKey, LucideEdit, LucideSave, LucideTrash2, LucideAlertTriangle,
   LucideBadgeCheck, LucideTruck, LucideCrown, LucideWifiOff, LucideAward,
-  LucideHeadphones, LucideWallet, LucideWheat, LucideSprout, LucideDroplets
+  LucideHeadphones, LucideWallet, LucideWheat, LucideSprout, LucideDroplets,
+  LucideUpload
 } from 'lucide-react';
 import { NIGERIAN_STATES, TRANSLATIONS, MOCK_PRODUCTS, MOCK_POSTS, CRYPTO_ADDRESSES, MOCK_USER, MOCK_GROUPS } from './constants';
 import { Language, Product, ForumPost, ChatMessage, AppSettings, UserProfile, Theme, ForumGroup, Comment } from './types';
@@ -529,20 +530,285 @@ const Navbar = ({ lang, setLang, activeTab, setActiveTab, mobileMenuOpen, setMob
 };
 
 // 2. Marketplace Component (Refined)
-const Marketplace = ({ lang, theme }: { lang: Language, theme: Theme }) => {
+const ProductDetailsModal = ({ product, onClose, theme, onContact }: { product: Product, onClose: () => void, theme: Theme, onContact: () => void }) => {
+  if (!product) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+      <div className={`w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl relative flex flex-col md:flex-row ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+        
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white backdrop-blur-md transition-all"
+        >
+          <LucideX size={24} />
+        </button>
+
+        {/* Image Section */}
+        <div className="w-full md:w-1/2 h-64 md:h-auto bg-gray-200 relative">
+             <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+             <div className="absolute top-4 left-4 flex gap-2">
+                <span className="px-3 py-1 bg-black/50 backdrop-blur text-white text-xs font-bold rounded-full">{product.category}</span>
+                {product.type === 'buy' && <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">WANTED</span>}
+             </div>
+        </div>
+
+        {/* Content Section */}
+        <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col">
+            <div className="flex-1">
+                <div className="flex justify-between items-start mb-2">
+                    <h2 className="text-2xl md:text-3xl font-serif font-black leading-tight">{product.name}</h2>
+                </div>
+                
+                <p className="text-3xl font-bold text-green-600 mb-4">₦{product.price.toLocaleString()}</p>
+                
+                <div className="flex items-center gap-4 text-sm opacity-70 mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
+                    <span className="flex items-center gap-1"><LucideMapPin size={16}/> {product.location}</span>
+                    <span className="flex items-center gap-1"><LucideClock size={16}/> {product.datePosted}</span>
+                </div>
+
+                <div className="mb-6">
+                    <h3 className="font-bold text-lg mb-2 opacity-90">Description</h3>
+                    <p className="leading-relaxed opacity-70 text-sm md:text-base">{product.description}</p>
+                </div>
+
+                <div className={`p-4 rounded-xl flex items-center gap-4 mb-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                    <div className="w-12 h-12 rounded-full bg-green-100 text-green-800 flex items-center justify-center font-bold text-xl">
+                        {product.sellerName[0]}
+                    </div>
+                    <div className="flex-1">
+                        <p className="font-bold text-sm">{product.sellerName}</p>
+                        <p className="text-xs opacity-60">Verified Seller • Tier {product.sellerTier}</p>
+                    </div>
+                    <button className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
+                        <LucidePhone size={20} className="text-green-500"/>
+                    </button>
+                </div>
+            </div>
+
+            <div className="flex gap-3 mt-auto pt-4">
+                <button 
+                    onClick={onContact}
+                    className="flex-1 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all"
+                >
+                    <LucideMessageCircle /> Contact Seller
+                </button>
+                <button className={`p-4 rounded-xl border-2 font-bold flex items-center justify-center transition-all ${theme === 'dark' ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <LucideShare2 />
+                </button>
+            </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+const CreateListingModal = ({ onClose, theme, onSave }: { onClose: () => void, theme: Theme, onSave: (p: any) => void }) => {
+    const [mode, setMode] = useState<'sell' | 'buy'>('sell');
+    const [name, setName] = useState('');
+    const [price, setPrice] = useState('');
+    const [category, setCategory] = useState('Poultry');
+    const [location, setLocation] = useState('Kano');
+    const [description, setDescription] = useState('');
+    const [image, setImage] = useState<string | null>(null);
+    const [video, setVideo] = useState<string | null>(null);
+
+    const handleFile = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                if(type === 'image') setImage(reader.result as string);
+                if(type === 'video') setVideo(reader.result as string);
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    const handleSubmit = () => {
+        if(!name || !price) return;
+        const newProduct = {
+            id: Date.now().toString(),
+            name,
+            category,
+            type: mode,
+            price: Number(price),
+            location,
+            sellerId: MOCK_USER.id,
+            sellerName: MOCK_USER.name,
+            sellerPhone: '23480000000',
+            sellerTier: MOCK_USER.verificationTier,
+            image: image || 'https://images.unsplash.com/photo-1544558509-f6230f2c4193?q=80&w=800',
+            video,
+            description,
+            datePosted: 'Just now'
+        };
+        onSave(newProduct);
+        onClose();
+    }
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+            <div className={`w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-inherit z-10">
+                    <h2 className="text-xl font-bold font-serif">Create New Listing</h2>
+                    <button onClick={onClose}><LucideX /></button>
+                </div>
+                
+                <div className="p-6 space-y-5">
+                    {/* Toggle */}
+                    <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                        <button 
+                            onClick={() => setMode('sell')}
+                            className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${mode === 'sell' ? 'bg-green-600 text-white shadow-md' : 'text-gray-500'}`}
+                        >
+                            I want to SELL
+                        </button>
+                        <button 
+                             onClick={() => setMode('buy')}
+                             className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${mode === 'buy' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500'}`}
+                        >
+                            I want to BUY
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase opacity-60 mb-2">Item Name</label>
+                            <input 
+                                value={name} onChange={e => setName(e.target.value)}
+                                className={`w-full p-4 rounded-xl border bg-transparent outline-none focus:border-green-500 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`} 
+                                placeholder="e.g. 50 Crates of Eggs"
+                            />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                             <div>
+                                <label className="block text-xs font-bold uppercase opacity-60 mb-2">Price (₦)</label>
+                                <input 
+                                    type="number"
+                                    value={price} onChange={e => setPrice(e.target.value)}
+                                    className={`w-full p-4 rounded-xl border bg-transparent outline-none focus:border-green-500 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`} 
+                                    placeholder="0.00"
+                                />
+                             </div>
+                             <div>
+                                <label className="block text-xs font-bold uppercase opacity-60 mb-2">Category</label>
+                                <select 
+                                    value={category} onChange={e => setCategory(e.target.value)}
+                                    className={`w-full p-4 rounded-xl border bg-transparent outline-none focus:border-green-500 ${theme === 'dark' ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-white'}`}
+                                >
+                                    <option>Poultry</option>
+                                    <option>Fish</option>
+                                    <option>Feed</option>
+                                    <option>Machinery</option>
+                                </select>
+                             </div>
+                        </div>
+
+                         <div>
+                            <label className="block text-xs font-bold uppercase opacity-60 mb-2">Location</label>
+                            <select 
+                                value={location} onChange={e => setLocation(e.target.value)}
+                                className={`w-full p-4 rounded-xl border bg-transparent outline-none focus:border-green-500 ${theme === 'dark' ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-white'}`}
+                            >
+                                {NIGERIAN_STATES.map(s => <option key={s}>{s}</option>)}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold uppercase opacity-60 mb-2">Description</label>
+                            <textarea 
+                                value={description} onChange={e => setDescription(e.target.value)}
+                                className={`w-full p-4 rounded-xl border bg-transparent outline-none focus:border-green-500 min-h-[100px] ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`} 
+                                placeholder="Describe quantity, quality, and delivery options..."
+                            />
+                        </div>
+
+                        {/* Media Upload */}
+                        <div>
+                             <label className="block text-xs font-bold uppercase opacity-60 mb-2">Media</label>
+                             <div className="grid grid-cols-2 gap-4">
+                                <label className={`h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-green-500 transition-colors ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                                    {image ? (
+                                        <img src={image} className="w-full h-full object-cover rounded-lg" alt="preview" />
+                                    ) : (
+                                        <>
+                                        <LucideImage className="opacity-40 mb-2"/>
+                                        <span className="text-xs font-bold opacity-60">Add Image</span>
+                                        </>
+                                    )}
+                                    <input type="file" className="hidden" accept="image/*" onChange={e => handleFile(e, 'image')} />
+                                </label>
+                                
+                                <label className={`h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-green-500 transition-colors ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                                    {video ? (
+                                         <div className="flex flex-col items-center">
+                                             <LucideCheckCircle className="text-green-500 mb-2"/>
+                                             <span className="text-xs font-bold text-green-500">Video Added</span>
+                                         </div>
+                                    ) : (
+                                        <>
+                                        <LucideVideo className="opacity-40 mb-2"/>
+                                        <span className="text-xs font-bold opacity-60">Add Video</span>
+                                        </>
+                                    )}
+                                    <input type="file" className="hidden" accept="video/*" onChange={e => handleFile(e, 'video')} />
+                                </label>
+                             </div>
+                        </div>
+
+                        {/* Contact Info Preview */}
+                        <div className={`p-4 rounded-xl flex items-center gap-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-800 font-bold">
+                                {MOCK_USER.name[0]}
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-xs font-bold uppercase opacity-60">Contact Info</p>
+                                <p className="text-sm font-bold truncate">{MOCK_USER.name} • {MOCK_USER.handle}</p>
+                            </div>
+                            <LucideCheckCircle size={18} className="text-green-500"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-6 border-t border-gray-100 dark:border-gray-800 sticky bottom-0 bg-inherit">
+                    <button 
+                        onClick={handleSubmit}
+                        className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-transform hover:scale-[1.02] ${mode === 'sell' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                    >
+                        {mode === 'sell' ? 'Post Item For Sale' : 'Post Buyer Request'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+const Marketplace = ({ lang, theme, onNavigate }: { lang: Language, theme: Theme, onNavigate: (tab: string, params?: any) => void }) => {
   const [filter, setFilter] = useState('All');
   const [marketMode, setMarketMode] = useState<'sell' | 'buy'>('sell'); // 'sell' = For Sale (Sellers), 'buy' = Requests (Buyers)
   const [search, setSearch] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  
+  // Local state for products to allow adding new ones
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   
   // Refined filtering logic
-  const filtered = MOCK_PRODUCTS.filter(p => 
+  const filtered = products.filter(p => 
     (filter === 'All' || p.category === filter) &&
     (p.type === marketMode) && // Filter by Buy/Sell mode
     (p.name.toLowerCase().includes(search.toLowerCase()) || p.location.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const handleAddProduct = (newProduct: Product) => {
+      setProducts([newProduct, ...products]);
+  }
+
   return (
-    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 relative min-h-[80vh]">
       
       {/* Dashboard Filters & Search */}
       <div className={`sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4 md:mx-0 md:px-0 backdrop-blur-xl ${theme === 'dark' ? 'bg-black/80' : 'bg-white/80'}`}>
@@ -578,7 +844,7 @@ const Marketplace = ({ lang, theme }: { lang: Language, theme: Theme }) => {
             </div>
             
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0">
-                {['All', 'Poultry', 'Fish', 'Feed'].map(cat => (
+                {['All', 'Poultry', 'Fish', 'Feed', 'Machinery'].map(cat => (
                     <button
                     key={cat}
                     onClick={() => setFilter(cat)}
@@ -597,7 +863,11 @@ const Marketplace = ({ lang, theme }: { lang: Language, theme: Theme }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-20">
         {filtered.length > 0 ? filtered.map(product => (
-            <div key={product.id} className={`group rounded-2xl overflow-hidden border transition-all hover:shadow-2xl hover:-translate-y-1 ${theme === 'dark' ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100 shadow-sm'}`}>
+            <div 
+                key={product.id} 
+                onClick={() => setSelectedProduct(product)}
+                className={`group rounded-2xl overflow-hidden border transition-all hover:shadow-2xl hover:-translate-y-1 cursor-pointer ${theme === 'dark' ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100 shadow-sm'}`}
+            >
                 <div className="relative h-48 md:h-56 overflow-hidden">
                     <LazyImage src={product.image} alt={product.name} />
                     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur text-black text-xs font-bold px-3 py-1 rounded-full">
@@ -633,6 +903,34 @@ const Marketplace = ({ lang, theme }: { lang: Language, theme: Theme }) => {
             </div>
         )}
       </div>
+      
+      {/* Floating Action Button for Create Listing */}
+      <button 
+        onClick={() => setShowCreateModal(true)}
+        className="fixed bottom-24 right-4 md:right-8 z-40 w-14 h-14 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-[0_8px_30px_rgba(22,163,74,0.4)] flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+      >
+        <LucidePlus size={28} strokeWidth={3} />
+      </button>
+
+      {selectedProduct && (
+        <ProductDetailsModal 
+            product={selectedProduct} 
+            onClose={() => setSelectedProduct(null)} 
+            theme={theme}
+            onContact={() => {
+                setSelectedProduct(null);
+                onNavigate('messages', { chatId: selectedProduct.sellerId });
+            }}
+        />
+      )}
+
+      {showCreateModal && (
+          <CreateListingModal 
+            onClose={() => setShowCreateModal(false)}
+            theme={theme}
+            onSave={handleAddProduct}
+          />
+      )}
     </div>
   );
 };
@@ -794,7 +1092,7 @@ const App = () => {
 
       <main className="pt-20 px-4 max-w-7xl mx-auto min-h-screen">
         
-        {activeTab === 'market' && <Marketplace lang={lang} theme={theme} />}
+        {activeTab === 'market' && <Marketplace lang={lang} theme={theme} onNavigate={handleNavigate} />}
 
         {activeTab === 'forum' && (
              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl mx-auto pb-20">
